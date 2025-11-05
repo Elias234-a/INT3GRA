@@ -28,3 +28,9 @@ declare module '*.webp' {
   const value: string;
   export default value;
 }
+
+// Declaración de tipos para Plotly
+declare module 'plotly.js-dist-min' {
+  const Plotly: any;
+  export default Plotly;
+}
