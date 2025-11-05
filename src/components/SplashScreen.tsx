@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
+import logoImage from '../assets/Rerso 9.png';
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -54,7 +55,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, colors }) => {
         }}
       >
         <motion.img
-          src="/src/assets/Rerso 9.png"
+          src={logoImage}
           alt="INT3GRA Logo"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

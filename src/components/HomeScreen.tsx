@@ -1,7 +1,7 @@
 import React from 'react';
 import { BookOpen, Calculator, Box, Dumbbell, History, Moon, Sun, Settings, Bot, Building, Lightbulb, BarChart3, Target, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
-// import logoImage from 'figma:asset/012dc8aeb499fe726de945927675bc728855b579.png';
+import logoImage from '../assets/Rerso 9.png';
 
 interface HomeScreenProps {
   colors: any;
@@ -137,7 +137,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ colors, navigateTo, historyCoun
           }}
         >
           <img
-            src="/src/assets/Rerso 9.png"
+            src={logoImage}
             alt="INT3GRA Logo"
             style={{ 
               height: 'clamp(40px, 10vw, 60px)',
