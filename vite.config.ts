@@ -50,12 +50,32 @@
         '@': path.resolve(__dirname, './src'),
       },
     },
-    build: {
-      target: 'esnext',
-      outDir: 'build',
-    },
-    server: {
-      port: 3000,
-      open: true,
-    },
-  });
+  build: {
+    target: 'esnext',
+    outDir: 'dist',
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Separar vendors grandes
+          'react-vendor': ['react', 'react-dom'],
+          'ui-vendor': ['framer-motion', 'lucide-react'],
+          'math-vendor': ['mathjs', 'katex', 'react-katex'],
+          'radix-vendor': [
+            '@radix-ui/react-accordion',
+            '@radix-ui/react-alert-dialog',
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-tooltip'
+          ]
+        }
+      }
+    }
+  },
+  server: {
+    port: 3000,
+    open: true,
+  },
+});
