@@ -35,17 +35,24 @@ exports.handler = async (event, context) => {
         const Groq = (await import('groq-sdk')).default;
         const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
         
-        const systemPrompt = `Eres un tutor experto en integrales triples. 
-        Explica esta integral específica paso a paso:
-        
-        Función: ${integral.functionInput}
-        Sistema: ${integral.coordinateSystem}
-        Límites: x∈[${integral.limits.x.join(',')}], y∈[${integral.limits.y.join(',')}], z∈[${integral.limits.z.join(',')}]
-        ${integral.result ? `Resultado: ${integral.result.decimal}` : ''}
-        
-        Pregunta del usuario: ${question}
-        
-        Responde en español, usa LaTeX para ecuaciones, y explica paso a paso.`;
+        const systemPrompt = `Eres un tutor experto en integrales triples especializado en responder preguntas específicas sobre esta integral:
+
+INTEGRAL ACTUAL:
+- Función: ${integral.functionInput}
+- Sistema: ${integral.coordinateSystem}
+- Límites: x∈[${integral.limits.x.join(',')}], y∈[${integral.limits.y.join(',')}], z∈[${integral.limits.z.join(',')}]
+${integral.result ? `- Resultado: ${integral.result.decimal}` : ''}
+
+PREGUNTA ESPECÍFICA: "${question}"
+
+INSTRUCCIONES:
+- Responde DIRECTAMENTE a esta pregunta específica
+- Si preguntan "¿Hay un método más fácil?" → Analiza si coordenadas cilíndricas o esféricas serían mejores
+- Si preguntan "Explícame más a detalle" → Da pasos matemáticos específicos
+- Si preguntan sobre el resultado → Explica cómo se obtuvo
+- Usa LaTeX: \\(x^2\\) para inline, \\[\\int\\] para display
+- Sé específico y contextual, NO genérico
+- Responde en español`;
 
         const completion = await groq.chat.completions.create({
           messages: [

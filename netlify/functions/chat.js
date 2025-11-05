@@ -29,7 +29,9 @@ exports.handler = async (event, context) => {
   try {
     const { message, context: chatContext, conversationHistory } = JSON.parse(event.body);
 
-    // Prioridad: Groq > Fallback local
+    // Prioridad: Groq > OpenAI > Fallback local
+    
+    // Intentar con Groq primero (gratis y rápido)
     if (process.env.GROQ_API_KEY) {
       try {
         const Groq = (await import('groq-sdk')).default;
@@ -39,14 +41,57 @@ exports.handler = async (event, context) => {
           messages: [
             {
               role: "system",
-              content: `Eres un tutor experto en integrales triples y cálculo multivariable. 
-              RESTRICCIONES ESTRICTAS:
-              - SOLO respondes sobre integrales triples
-              - NUNCA resuelves problemas nuevos (guías al usuario al solver)
-              - Explicas conceptos: Jacobiano, coordenadas, límites
-              - Formato educativo con pasos numerados
-              - Usa LaTeX para ecuaciones
-              - Responde en español`
+              content: `Eres un profesor experto en INTEGRALES TRIPLES y cálculo multivariable. Respondes TODO tipo de preguntas sobre este tema.
+
+🎯 TIPOS DE PREGUNTAS QUE MANEJAS:
+
+**CONCEPTUALES:**
+- ¿Qué es el Jacobiano? ¿Por qué se usa?
+- ¿Cuándo usar coordenadas cilíndricas/esféricas?
+- ¿Cómo establecer límites de integración?
+- ¿Qué significa geométricamente una integral triple?
+
+**METODOLÓGICAS:**
+- ¿Hay un método más fácil para resolver esto?
+- ¿Cómo cambio de coordenadas cartesianas a cilíndricas?
+- ¿Cuál es el orden de integración más conveniente?
+- ¿Cómo visualizo esta región de integración?
+
+**PASO A PASO:**
+- Explícame cómo resolver esta integral detalladamente
+- ¿Por qué este resultado es correcto?
+- ¿Cómo verifico mi respuesta?
+- Muéstrame cada paso del cálculo
+
+**COMPARATIVAS:**
+- ¿Cuál es mejor: cartesianas vs cilíndricas vs esféricas?
+- ¿Qué diferencia hay entre estos métodos?
+- ¿Por qué un sistema es más eficiente que otro?
+
+**APLICACIONES:**
+- ¿Para qué sirven las integrales triples en la vida real?
+- ¿Cómo calculo volúmenes, masas, centros de masa?
+- ¿Qué problemas físicos resuelvo con esto?
+
+**ERRORES COMUNES:**
+- ¿Por qué me da un resultado diferente?
+- ¿Qué estoy haciendo mal en los límites?
+- ¿Cómo evito errores típicos?
+
+📝 FORMATO DE RESPUESTA:
+- Respuesta DIRECTA y ESPECÍFICA a la pregunta
+- Usa LaTeX: \\(x^2 + y^2\\) inline, \\[\\iiint f(x,y,z)\\,dV\\] display
+- Ejemplos concretos cuando sea útil
+- Pasos numerados para procedimientos
+- Explicaciones intuitivas + rigor matemático
+- SIEMPRE en español
+- Tono educativo y amigable
+
+🚫 NO HAGAS:
+- Respuestas genéricas o plantillas
+- "Consulta tu libro de texto"
+- Evadir preguntas específicas
+- Respuestas demasiado cortas sin explicación`
             },
             ...(conversationHistory || chatContext || []),
             { role: "user", content: message }
@@ -75,26 +120,77 @@ exports.handler = async (event, context) => {
       }
     }
 
-    // Fallback local basado en palabras clave
-    let fallbackResponse = "**Tutor IA - INTEGRA**\n\n";
+    // Fallback local inteligente basado en palabras clave
+    let fallbackResponse = "**🤖 Tutor IA - INTEGRA (Modo Offline)**\n\n";
     
     const messageLower = message.toLowerCase();
     
-    if (messageLower.includes('jacobiano')) {
+    // Detectar tipo de pregunta y responder específicamente
+    if (messageLower.includes('método') && messageLower.includes('fácil')) {
+      fallbackResponse += `**¿Hay un método más fácil?**
+
+Para la función que estás analizando, considera:
+
+**1. Analizar la simetría:**
+- Si tiene \\(x^2 + y^2\\) → **Cilíndricas** son más fáciles
+- Si tiene \\(x^2 + y^2 + z^2\\) → **Esféricas** son ideales
+- Si es rectangular → **Cartesianas** están bien
+
+**2. Verificar los límites:**
+- Límites circulares → Cilíndricas
+- Límites esféricos → Esféricas
+- Límites rectangulares → Cartesianas
+
+**3. Cambiar orden de integración:**
+- A veces \\(dz\\,dy\\,dx\\) es más fácil que \\(dx\\,dy\\,dz\\)
+
+*Para análisis específico de tu integral, configura Groq AI.*`;
+    } else if (messageLower.includes('detalle') || messageLower.includes('paso')) {
+      fallbackResponse += `**Explicación Paso a Paso**
+
+**Pasos generales para resolver integrales triples:**
+
+**1. Identificar la región D:**
+- Analiza los límites de integración
+- Dibuja o visualiza la región si es posible
+
+**2. Elegir el sistema de coordenadas:**
+- Cartesianas: regiones rectangulares
+- Cilíndricas: simetría circular
+- Esféricas: simetría radial
+
+**3. Establecer los límites correctos:**
+- Orden: de adentro hacia afuera
+- Verificar que cubran toda la región
+
+**4. Aplicar el Jacobiano:**
+- Cartesianas: J = 1
+- Cilíndricas: J = r
+- Esféricas: J = ρ²sin(φ)
+
+**5. Integrar paso a paso:**
+- Empezar por la integral más interna
+- Proceder hacia afuera
+
+*Para pasos específicos de tu integral, configura Groq AI.*`;
+    } else if (messageLower.includes('jacobiano')) {
       fallbackResponse += `**El Jacobiano en Integrales Triples**
 
 **¿Qué es?**
-El Jacobiano es un factor de corrección que aparece al cambiar de coordenadas.
+El Jacobiano es un factor de corrección que compensa la "deformación" del espacio al cambiar coordenadas.
 
-**Valores comunes:**
-- **Cartesianas:** J = 1
-- **Cilíndricas:** J = r  
-- **Esféricas:** J = ρ²sin(φ)
+**Valores según el sistema:**
+- **Cartesianas (x,y,z):** J = 1
+- **Cilíndricas (r,θ,z):** J = r  
+- **Esféricas (ρ,θ,φ):** J = ρ²sin(φ)
 
 **¿Por qué es necesario?**
-Compensa la deformación del espacio al cambiar coordenadas.`;
+Cuando cambias coordenadas, los "cubitos" infinitesimales se deforman. El Jacobiano mide cuánto se estiran o comprimen.
+
+**Ejemplo visual:**
+En cilíndricas, los "cubitos" cerca del origen (r pequeño) son más pequeños que los alejados (r grande). El factor "r" compensa esto.`;
     } else if (messageLower.includes('cilindrica') || messageLower.includes('cilíndrica')) {
-      fallbackResponse += `**Coordenadas Cilíndricas**
+      fallbackResponse += `**Coordenadas Cilíndricas (r, θ, z)**
 
 **Transformación:**
 - x = r·cos(θ)
@@ -102,12 +198,20 @@ Compensa la deformación del espacio al cambiar coordenadas.`;
 - z = z
 
 **Cuándo usar:**
-- Simetría circular en el plano xy
+- Funciones con \\(x^2 + y^2\\)
+- Regiones circulares en xy
 - Cilindros, conos, paraboloides circulares
 
-**Jacobiano:** J = r`;
+**Límites típicos:**
+- r: [0, R] donde R es el radio
+- θ: [0, 2π] para círculo completo
+- z: según la región
+
+**Jacobiano:** J = r
+
+**Ejemplo:** \\(\\iiint (x^2 + y^2)\\,dV\\) se convierte en \\(\\iiint r^2 \\cdot r\\,dr\\,d\\theta\\,dz = \\iiint r^3\\,dr\\,d\\theta\\,dz\\)`;
     } else if (messageLower.includes('esferica') || messageLower.includes('esférica')) {
-      fallbackResponse += `**Coordenadas Esféricas**
+      fallbackResponse += `**Coordenadas Esféricas (ρ, θ, φ)**
 
 **Transformación:**
 - x = ρ·sin(φ)·cos(θ)
@@ -115,23 +219,62 @@ Compensa la deformación del espacio al cambiar coordenadas.`;
 - z = ρ·cos(φ)
 
 **Cuándo usar:**
-- Simetría esférica
-- Esferas, hemisferios
+- Funciones con \\(x^2 + y^2 + z^2\\)
+- Regiones esféricas
+- Esferas, hemisferios, conos desde el origen
 
-**Jacobiano:** J = ρ²sin(φ)`;
+**Límites típicos:**
+- ρ: [0, R] donde R es el radio
+- θ: [0, 2π] para rotación completa
+- φ: [0, π] desde polo norte a sur
+
+**Jacobiano:** J = ρ²sin(φ)
+
+**Ejemplo:** \\(\\iiint (x^2 + y^2 + z^2)\\,dV\\) se convierte en \\(\\iiint ρ^2 \\cdot ρ^2\\sin(φ)\\,dρ\\,d\\theta\\,dφ\\)`;
+    } else if (messageLower.includes('límite') || messageLower.includes('limite')) {
+      fallbackResponse += `**Establecer Límites de Integración**
+
+**Principio clave:** Los límites van de **adentro hacia afuera**
+
+**Pasos:**
+1. **Identifica la región D** en el espacio
+2. **Proyecta** sobre los planos coordenados
+3. **Establece límites** empezando por la variable más "interna"
+
+**Ejemplo en cartesianas:**
+Para una esfera \\(x^2 + y^2 + z^2 ≤ 1\\):
+- z: desde \\(-\\sqrt{1-x^2-y^2}\\) hasta \\(\\sqrt{1-x^2-y^2}\\)
+- y: desde \\(-\\sqrt{1-x^2}\\) hasta \\(\\sqrt{1-x^2}\\)  
+- x: desde -1 hasta 1
+
+**Consejo:** Dibuja la región o usa el visualizador 3D de INTEGRA.`;
     } else {
-      fallbackResponse += `Hola! Soy tu tutor de integrales triples.
+      fallbackResponse += `**🎓 Tutor de Integrales Triples**
 
-**Puedo ayudarte con:**
-- Conceptos de Jacobiano
-- Sistemas de coordenadas
-- Cuándo usar cada sistema
-- Interpretación de límites
+Puedo ayudarte con **cualquier pregunta** sobre integrales triples:
 
-**Para resolver integrales:** Usa el Solver
-**Para visualizar:** Usa el Visualizador 3D
+**📚 Conceptos:**
+- Jacobiano, coordenadas, límites
+- Interpretación geométrica
+- Aplicaciones físicas
 
-¿Sobre qué concepto te gustaría aprender?`;
+**🔧 Métodos:**
+- Cuándo usar cada sistema de coordenadas
+- Cómo cambiar entre sistemas
+- Trucos para simplificar cálculos
+
+**📝 Resolución:**
+- Pasos detallados
+- Verificación de resultados
+- Errores comunes
+
+**❓ Pregúntame cosas como:**
+- "¿Hay un método más fácil?"
+- "Explícame el Jacobiano"
+- "¿Cuándo uso esféricas?"
+- "¿Cómo establezco estos límites?"
+
+*Para respuestas más detalladas y específicas, configura tu API key de Groq.*`;
     }
 
     fallbackResponse += "\n\n*Para respuestas más detalladas, configura tu API key de Groq.*";
