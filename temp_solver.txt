@@ -1,0 +1,100 @@
+﻿import React, { useState } from 'react';
+import { ArrowLeft, Download, Trash2, History as HistoryIcon, Moon, Sun, TrendingUp, Calculator, Clock, Star, Tag, Plus, X, Eye, BarChart3, MessageCircle, Filter } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { HistoryItem } from '../App';
+
+interface HistoryScreenProps {
+  colors: any;
+  onBack: () => void;
+  history: HistoryItem[];
+  clearHistory: () => void;
+  isDark: boolean;
+  toggleTheme: () => void;
+  toggleFavorite: (id: string) => void;
+  addTag: (id: string, tag: string) => void;
+  removeTag: (id: string, tag: string) => void;
+  getAllTags: () => string[];
+  getItemsByTag: (tag: string) => HistoryItem[];
+  getFavorites: () => HistoryItem[];
+  getPopularTags: (limit?: number) => Array<{tag: string, count: number}>;
+  removeFromHistory: (id: string) => void;
+  onVisualize: (integralData: any) => void;
+  onCompare: (integralId: string) => void;
+  onChatWithContext: (integralId: string) => void;
+}
+
+const HistoryScreen: React.FC<HistoryScreenProps> = ({ 
+  colors, 
+  onBack, 
+  history, 
+  clearHistory, 
+  isDark, 
+  toggleTheme,
+  toggleFavorite,
+  addTag,
+  removeTag,
+  getAllTags,
+  getItemsByTag,
+  getFavorites,
+  getPopularTags,
+  removeFromHistory,
+  onVisualize,
+  onCompare,
+  onChatWithContext
+}) => {
+  const [filter, setFilter] = useState<'all' | 'favorites' | 'cartesian' | 'cylindrical' | 'spherical' | string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [newTagInput, setNewTagInput] = useState('');
+  const [addingTagToId, setAddingTagToId] = useState<string | null>(null);
+
+  const downloadHistory = () => {
+    const dataStr = JSON.stringify(history, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `int3gra-historial-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const getFilteredHistory = (): HistoryItem[] => {
+    let filtered = history;
+
+    // Filtro por tipo
+    if (filter === 'favorites') {
+      filtered = getFavorites();
+    } else if (filter === 'cartesian' || filter === 'cylindrical' || filter === 'spherical') {
+      filtered = history.filter(item => item.coordinateSystem === filter);
+    } else if (selectedTag) {
+      filtered = getItemsByTag(selectedTag);
+    }
+
+    // BÃºsqueda por texto
+    if (searchQuery) {
+      filtered = filtered.filter(item =>
+        item.function.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    }
+
+    return filtered.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  };
+
+  const handleAddTag = (id: string) => {
+    if (newTagInput.trim() && !newTagInput.includes(' ')) {
+      addTag(id, newTagInput.trim().toLowerCase());
+      setNewTagInput('');
+      setAddingTagToId(null);
+    }
+  };
+
+  const getSystemColor = (system: string): string => {
+    const systemColors = {
+      cartesian: '#FFFD8F',
+      cylindrical: '#B0CE88',
+      spherical: '#4C763B'
+    };
+    return systemColors[system as keyof typeof systemColors] || '#FFFD8F';
+  };

@@ -1,0 +1,304 @@
+/* INTEGRA - Neo Brutalism Design System */
+/* Paleta de colores oficial y estilos base */
+
+:root {
+  /* Paleta de colores oficial */
+  --primary: #FFFD8F;      /* Amarillo crema energético */
+  --secondary: #B0CE88;    /* Verde lima suave */
+  --tertiary: #4C763B;     /* Verde oscuro profesional */
+  --dark: #043915;         /* Verde bosque profundo */
+  --neutral: #000000;      /* Negro puro */
+  --white: #FFFFFF;        /* Blanco puro */
+  
+  /* Neo Brutalism específicos */
+  --stroke-width: 4px;
+  --border-radius: 16px;
+  --border-radius-small: 12px;
+  --border-radius-large: 20px;
+  --shadow: 0 6px 0 rgba(0, 0, 0, 0.25);
+  --shadow-hover: 0 8px 0 rgba(0, 0, 0, 0.3);
+  
+  /* Espaciado base */
+  --spacing-xs: 8px;
+  --spacing-sm: 16px;
+  --spacing-md: 24px;
+  --spacing-lg: 32px;
+  --spacing-xl: 48px;
+  
+  /* Tipografía */
+  --font-weight-bold: 700;
+  --font-weight-black: 900;
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0;
+}
+
+/* Reset y base */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-tight);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Clases utilitarias Neo Brutalism */
+.neo-button {
+  background: var(--primary);
+  border: var(--stroke-width) solid var(--neutral);
+  border-radius: var(--border-radius);
+  color: var(--neutral);
+  cursor: pointer;
+  font-weight: var(--font-weight-black);
+  letter-spacing: var(--letter-spacing-tight);
+  padding: var(--spacing-sm) var(--spacing-md);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+}
+
+.neo-button:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: var(--shadow-hover);
+  background: var(--secondary);
+}
+
+.neo-button:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+}
+
+.neo-button--secondary {
+  background: var(--secondary);
+}
+
+.neo-button--tertiary {
+  background: var(--tertiary);
+  color: var(--white);
+}
+
+.neo-button--dark {
+  background: var(--dark);
+  color: var(--white);
+}
+
+.neo-button--outline {
+  background: transparent;
+  color: var(--neutral);
+}
+
+.neo-button--outline:hover {
+  background: var(--primary);
+}
+
+/* Inputs Neo Brutalism */
+.neo-input {
+  background: var(--white);
+  border: var(--stroke-width) solid var(--neutral);
+  border-radius: var(--border-radius-small);
+  color: var(--neutral);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-tight);
+  padding: var(--spacing-sm);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.15);
+}
+
+.neo-input:focus {
+  outline: none;
+  border-color: var(--tertiary);
+  box-shadow: 0 6px 0 rgba(76, 118, 59, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Cards Neo Brutalism */
+.neo-card {
+  background: var(--white);
+  border: var(--stroke-width) solid var(--neutral);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: var(--spacing-md);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.neo-card:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: var(--shadow-hover);
+}
+
+.neo-card--primary {
+  background: var(--primary);
+}
+
+.neo-card--secondary {
+  background: var(--secondary);
+}
+
+.neo-card--tertiary {
+  background: var(--tertiary);
+  color: var(--white);
+}
+
+/* Títulos Neo Brutalism */
+.neo-title {
+  font-weight: var(--font-weight-black);
+  letter-spacing: var(--letter-spacing-tight);
+  line-height: 1.1;
+  margin: 0;
+}
+
+.neo-title--xl {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+}
+
+.neo-title--lg {
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.neo-title--md {
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+}
+
+.neo-title--sm {
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+}
+
+/* Contenedores */
+.neo-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-md);
+}
+
+.neo-grid {
+  display: grid;
+  gap: var(--spacing-md);
+}
+
+.neo-grid--2 {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.neo-grid--3 {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.neo-grid--4 {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+/* Espaciado */
+.neo-spacing--xs { margin: var(--spacing-xs); }
+.neo-spacing--sm { margin: var(--spacing-sm); }
+.neo-spacing--md { margin: var(--spacing-md); }
+.neo-spacing--lg { margin: var(--spacing-lg); }
+.neo-spacing--xl { margin: var(--spacing-xl); }
+
+.neo-spacing-x--xs { margin-left: var(--spacing-xs); margin-right: var(--spacing-xs); }
+.neo-spacing-x--sm { margin-left: var(--spacing-sm); margin-right: var(--spacing-sm); }
+.neo-spacing-x--md { margin-left: var(--spacing-md); margin-right: var(--spacing-md); }
+.neo-spacing-x--lg { margin-left: var(--spacing-lg); margin-right: var(--spacing-lg); }
+
+.neo-spacing-y--xs { margin-top: var(--spacing-xs); margin-bottom: var(--spacing-xs); }
+.neo-spacing-y--sm { margin-top: var(--spacing-sm); margin-bottom: var(--spacing-sm); }
+.neo-spacing-y--md { margin-top: var(--spacing-md); margin-bottom: var(--spacing-md); }
+.neo-spacing-y--lg { margin-top: var(--spacing-lg); margin-bottom: var(--spacing-lg); }
+
+/* Modo oscuro */
+.dark .neo-card {
+  background: var(--dark);
+  color: var(--white);
+  border-color: var(--white);
+}
+
+.dark .neo-input {
+  background: var(--dark);
+  color: var(--white);
+  border-color: var(--white);
+}
+
+.dark .neo-button {
+  border-color: var(--white);
+}
+
+/* Animaciones */
+@keyframes neo-bounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%, 43% {
+    transform: translate3d(0, -8px, 0);
+  }
+  70% {
+    transform: translate3d(0, -4px, 0);
+  }
+  90% {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+.neo-bounce {
+  animation: neo-bounce 1s ease-in-out;
+}
+
+/* Utilidades de texto */
+.neo-text--bold {
+  font-weight: var(--font-weight-bold);
+}
+
+.neo-text--black {
+  font-weight: var(--font-weight-black);
+}
+
+.neo-text--tight {
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+/* Estados de color */
+.neo-success {
+  background: var(--secondary);
+  color: var(--neutral);
+}
+
+.neo-warning {
+  background: var(--primary);
+  color: var(--neutral);
+}
+
+.neo-error {
+  background: #FF4444;
+  color: var(--white);
+}
+
+.neo-info {
+  background: var(--tertiary);
+  color: var(--white);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  :root {
+    --border-radius: 12px;
+    --border-radius-small: 8px;
+    --border-radius-large: 16px;
+    --spacing-sm: 12px;
+    --spacing-md: 20px;
+    --spacing-lg: 28px;
+  }
+  
+  .neo-button {
+    padding: 12px 20px;
+  }
+  
+  .neo-card {
+    padding: var(--spacing-sm);
+  }
+}
