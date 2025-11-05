@@ -1,0 +1,129 @@
+// Función serverless para explicar integrales específicas
+exports.handler = async (event, context) => {
+  // Solo permitir POST
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS'
+      },
+      body: JSON.stringify({ error: 'Method not allowed' })
+    };
+  }
+
+  // Manejar preflight OPTIONS
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS'
+      },
+      body: ''
+    };
+  }
+
+  try {
+    const { integral, question, conversationHistory } = JSON.parse(event.body);
+
+    // Prioridad: Groq > Fallback local
+    if (process.env.GROQ_API_KEY) {
+      try {
+        const Groq = (await import('groq-sdk')).default;
+        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+        
+        const systemPrompt = `Eres un tutor experto en integrales triples. 
+        Explica esta integral específica paso a paso:
+        
+        Función: ${integral.functionInput}
+        Sistema: ${integral.coordinateSystem}
+        Límites: x∈[${integral.limits.x.join(',')}], y∈[${integral.limits.y.join(',')}], z∈[${integral.limits.z.join(',')}]
+        ${integral.result ? `Resultado: ${integral.result.decimal}` : ''}
+        
+        Pregunta del usuario: ${question}
+        
+        Responde en español, usa LaTeX para ecuaciones, y explica paso a paso.`;
+
+        const completion = await groq.chat.completions.create({
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...(conversationHistory || []),
+            { role: "user", content: question }
+          ],
+          model: "llama3-70b-8192",
+          temperature: 0.7,
+          max_tokens: 1500
+        });
+
+        return {
+          statusCode: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          },
+          body: JSON.stringify({
+            success: true,
+            data: {
+              explanation: completion.choices[0].message.content,
+              timestamp: Date.now(),
+              source: 'groq'
+            }
+          })
+        };
+      } catch (groqError) {
+        console.error('Error con Groq:', groqError);
+        // Continuar al fallback
+      }
+    }
+
+    // Fallback local
+    const fallbackResponse = `**Explicación de la Integral**
+
+**Función:** ${integral.functionInput}
+**Sistema:** ${integral.coordinateSystem}
+**Límites:** x∈[${integral.limits.x.join(',')}], y∈[${integral.limits.y.join(',')}], z∈[${integral.limits.z.join(',')}]
+
+**Pasos generales:**
+1. **Identificar la región:** Analiza los límites de integración
+2. **Verificar el sistema:** ${integral.coordinateSystem} es apropiado para esta región
+3. **Aplicar Jacobiano:** ${integral.coordinateSystem === 'cylindrical' ? 'J = r' : integral.coordinateSystem === 'spherical' ? 'J = ρ²sin(φ)' : 'J = 1'}
+4. **Integrar:** Procede de adentro hacia afuera
+
+${integral.result ? `**Resultado:** ${integral.result.decimal.toFixed(4)}` : ''}
+
+*Para una explicación más detallada, configura tu API key de Groq.*`;
+
+    return {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({
+        success: true,
+        data: {
+          explanation: fallbackResponse,
+          timestamp: Date.now(),
+          source: 'fallback'
+        }
+      })
+    };
+
+  } catch (error) {
+    console.error('Error en explain:', error);
+    return {
+      statusCode: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({
+        success: false,
+        error: 'Error interno del servidor'
+      })
+    };
+  }
+};
