@@ -1,5 +1,5 @@
 // Función serverless para el chat de IA
-const OpenAI = require('openai');
+// Usa dynamic import para compatibilidad con ESM packages
 
 exports.handler = async (event, context) => {
   // Solo permitir POST
@@ -13,47 +13,94 @@ exports.handler = async (event, context) => {
   try {
     const { message, context: chatContext } = JSON.parse(event.body);
 
-    // Verificar si hay API key de OpenAI
-    if (!process.env.OPENAI_API_KEY) {
-      // Sistema de fallback local
-      return {
-        statusCode: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        },
-        body: JSON.stringify({
-          response: getFallbackResponse(message),
-          source: 'local'
-        })
-      };
+    // Prioridad: Groq > OpenAI > Fallback local
+    
+    // Intentar con Groq primero (gratis y rápido)
+    if (process.env.GROQ_API_KEY) {
+      try {
+        const Groq = (await import('groq-sdk')).default;
+        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+        
+        const completion = await groq.chat.completions.create({
+          messages: [
+            {
+              role: "system",
+              content: `Eres un tutor experto en integrales triples y cálculo multivariable. 
+              RESTRICCIONES ESTRICTAS:
+              - SOLO respondes sobre integrales triples
+              - NUNCA resuelves problemas nuevos (guías al usuario al solver)
+              - Explicas conceptos: Jacobiano, coordenadas, límites
+              - Formato educativo con pasos numerados
+              - Usa LaTeX para ecuaciones
+              - Responde en español`
+            },
+            ...(chatContext || []),
+            { role: "user", content: message }
+          ],
+          model: "llama3-70b-8192",
+          temperature: 0.7,
+          max_tokens: 1500
+        });
+
+        return {
+          statusCode: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          },
+          body: JSON.stringify({
+            response: completion.choices[0].message.content,
+            source: 'groq'
+          })
+        };
+      } catch (groqError) {
+        console.log('Groq error, trying OpenAI fallback:', groqError.message);
+      }
     }
 
-    // Usar OpenAI si hay API key
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
+    // Fallback a OpenAI si Groq falla o no está configurado
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        const OpenAI = (await import('openai')).default;
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        {
-          role: "system",
-          content: `Eres un tutor experto en integrales triples y cálculo multivariable. 
-          RESTRICCIONES ESTRICTAS:
-          - SOLO respondes sobre integrales triples
-          - NUNCA resuelves problemas nuevos (guías al usuario al solver)
-          - Explicas conceptos: Jacobiano, coordenadas, límites
-          - Formato educativo con pasos numerados
-          - Usa LaTeX para ecuaciones`
-        },
-        ...chatContext,
-        { role: "user", content: message }
-      ],
-      temperature: 0.7,
-      max_tokens: 1000
-    });
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4",
+          messages: [
+            {
+              role: "system",
+              content: `Eres un tutor experto en integrales triples y cálculo multivariable. 
+              RESTRICCIONES ESTRICTAS:
+              - SOLO respondes sobre integrales triples
+              - NUNCA resuelves problemas nuevos (guías al usuario al solver)
+              - Explicas conceptos: Jacobiano, coordenadas, límites
+              - Formato educativo con pasos numerados
+              - Usa LaTeX para ecuaciones`
+            },
+            ...(chatContext || []),
+            { role: "user", content: message }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000
+        });
 
+        return {
+          statusCode: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          },
+          body: JSON.stringify({
+            response: completion.choices[0].message.content,
+            source: 'openai'
+          })
+        };
+      } catch (openaiError) {
+        console.log('OpenAI error, using local fallback:', openaiError.message);
+      }
+    }
+
+    // Sistema de fallback local (sin API keys)
     return {
       statusCode: 200,
       headers: {
@@ -61,13 +108,13 @@ exports.handler = async (event, context) => {
         'Access-Control-Allow-Origin': '*'
       },
       body: JSON.stringify({
-        response: completion.choices[0].message.content,
-        source: 'openai'
+        response: getFallbackResponse(message),
+        source: 'local'
       })
     };
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error general:', error);
     
     // Fallback en caso de error
     return {
@@ -77,7 +124,7 @@ exports.handler = async (event, context) => {
         'Access-Control-Allow-Origin': '*'
       },
       body: JSON.stringify({
-        response: getFallbackResponse(JSON.parse(event.body).message),
+        response: getFallbackResponse(event.body ? JSON.parse(event.body).message : 'error'),
         source: 'local-fallback'
       })
     };

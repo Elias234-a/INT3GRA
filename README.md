@@ -17,7 +17,7 @@ INT3GRA es una aplicación web educativa completa diseñada para facilitar el ap
 
 - 🧮 **Cálculo Automático** - Resuelve integrales triples numéricamente con precisión configurable
 - 📊 **Visualización 3D** - Gráficas interactivas con GeoGebra API
-- 🤖 **Tutor IA** - Asistente virtual con OpenAI GPT-4
+- 🤖 **Tutor IA** - Asistente virtual con Groq AI (Llama 3 70B) - **100% Gratis**
 - 📚 **Casos Reales** - 8 problemas de ingeniería aplicados
 - 🔄 **Comparador** - Analiza diferentes sistemas de coordenadas
 - 📖 **Teoría Completa** - Fundamentos y ejemplos paso a paso
@@ -54,12 +54,16 @@ npm install
 cd ..
 ```
 
-4. **Configurar variables de entorno (opcional)**
+4. **Configurar variables de entorno (opcional - IA avanzada)**
 ```bash
 cd server
 copy .env.example .env
-# Editar .env y agregar tu API key de OpenAI (opcional)
+# Editar .env y agregar tu API key de Groq (100% gratis)
+# GROQ_API_KEY=gsk_tu_key_aqui
+# Obtener en: https://console.groq.com/keys
 ```
+
+**Ver guía completa:** [CONFIGURAR-GROQ.md](CONFIGURAR-GROQ.md)
 
 5. **Iniciar el sistema**
 
@@ -99,7 +103,7 @@ http://localhost:3000
 ### Backend
 - **Node.js** - Runtime
 - **Express** - Servidor web
-- **OpenAI API** - Inteligencia artificial
+- **Groq AI (Llama 3 70B)** - Inteligencia artificial (100% gratis)
 - **Math.js** - Cálculos matemáticos
 
 ### Diseño
@@ -244,10 +248,11 @@ Ajusta en `SettingsScreen` o modifica:
 const [precision, setPrecision] = useState(20); // 10-100
 ```
 
-### API de OpenAI
+### API de Groq (Recomendado - Gratis)
 Para habilitar el tutor IA avanzado:
 ```bash
 # server/.env
+GROQ_API_KEY=gsk_tu_key_aqui
 OPENAI_API_KEY=tu-api-key-aqui
 ```
 
@@ -320,7 +325,8 @@ Este proyecto es de uso educativo. Ver `LICENSE` para más detalles.
 ## 🙏 Agradecimientos
 
 - GeoGebra por su excelente API de visualización 3D
-- OpenAI por GPT-4 y capacidades de IA educativa
+- Groq por Llama 3 70B y acceso gratuito a IA avanzada
+- OpenAI, Google Gemini por opciones alternativas de IA
 - Comunidad de React y TypeScript
 - Estudiantes y profesores que inspiraron este proyecto
 
@@ -338,7 +344,7 @@ Este proyecto es de uso educativo. Ver `LICENSE` para más detalles.
 ### Versión 1.0 (Actual) ✅
 - [x] Cálculo de integrales triples
 - [x] Visualización 3D con GeoGebra
-- [x] Tutor IA con OpenAI
+- [x] Tutor IA con Groq (Llama 3 70B) - 100% Gratis
 - [x] 8 casos de estudio
 - [x] Comparador de sistemas
 - [x] Teoría y ejercicios

@@ -11,6 +11,8 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+  # Módulos externos que no se deben bundlear (se cargan en runtime)
+  external_node_modules = ["openai", "groq-sdk"]
 
 # Redirecciones para SPA (Single Page Application)
 [[redirects]]

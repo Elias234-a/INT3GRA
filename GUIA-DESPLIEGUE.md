@@ -36,15 +36,30 @@ Build command: npm run build
 Publish directory: dist
 ```
 
-#### 4. Variables de Entorno (Opcional)
-Si quieres usar OpenAI (IA avanzada):
+#### 4. Variables de Entorno (Opcional - IA Avanzada)
 
-1. En el dashboard de Netlify, ve a: **Site settings** → **Environment variables**
-2. Agrega:
-   - **Key:** `OPENAI_API_KEY`
-   - **Value:** Tu API key de OpenAI
+**OPCIÓN RECOMENDADA: Groq AI (100% Gratis)**
 
-**Nota:** El sistema funciona sin API key usando respuestas locales.
+1. Obtén tu API key: https://console.groq.com/keys
+2. En Netlify: **Site settings** → **Environment variables**
+3. Agrega:
+   - **Key:** `GROQ_API_KEY`
+   - **Value:** `gsk_tu_key_aqui` (tu API key de Groq)
+
+**Alternativas:**
+
+- **Google Gemini (Gratis):**
+  - Key: `GOOGLE_API_KEY`
+  - Obtener en: https://makersuite.google.com/app/apikey
+
+- **OpenAI (Pago):**
+  - Key: `OPENAI_API_KEY`
+  - Obtener en: https://platform.openai.com/api-keys
+  - Costo: ~$0.01-0.10 por pregunta
+
+**Prioridad:** Groq > Gemini > OpenAI > Sistema Local
+
+**Nota:** El sistema funciona perfectamente sin API keys usando respuestas locales gratuitas.
 
 #### 5. Deploy
 1. Click en "Deploy site"
