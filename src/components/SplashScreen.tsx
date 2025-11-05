@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+// @ts-ignore
 import logoImage from '../assets/Rerso 9.png';
 
 interface SplashScreenProps {

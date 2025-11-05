@@ -1,7 +1,8 @@
 import React from 'react';
 import { BookOpen, Calculator, Box, Dumbbell, History, Moon, Sun, Settings, Bot, Building, Lightbulb, BarChart3, Target, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
-// import logoImage from '../assets/Rerso 9.png';
+// @ts-ignore
+import logoImage from '../assets/Rerso 9.png';
 
 interface HomeScreenProps {
   colors: any;
@@ -120,22 +121,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ colors, navigateTo, historyCoun
             marginBottom: 'clamp(12px, 3vw, 16px)'
           }}
         >
-          <div
-            style={{
-              width: 'clamp(40px, 10vw, 60px)',
+          <img
+            src={logoImage}
+            alt="INT3GRA Logo"
+            style={{ 
               height: 'clamp(40px, 10vw, 60px)',
-              background: colors.accent2,
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.5rem',
-              fontWeight: '900',
-              color: '#000'
-            }}
-          >
-            ∫∫∫
-          </div>
+              width: 'auto',
+              display: 'block'
+            }} 
+          />
         </motion.div>
       </div>
 
