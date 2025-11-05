@@ -1,7 +1,7 @@
 import React from 'react';
 import { BookOpen, Calculator, Box, Dumbbell, History, Moon, Sun, Settings, Bot, Building, Lightbulb, BarChart3, Target, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
-import logoImage from '../assets/Rerso 9.png';
+// import logoImage from '../assets/Rerso 9.png';
 
 interface HomeScreenProps {
   colors: any;
@@ -44,22 +44,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ colors, navigateTo, historyCoun
       screen: 'casestudy',
       color: '#10B981',
       featured: true
-    },
-    {
-      icon: BookOpen,
-      title: 'Teoría Interactiva',
-      description: 'Jacobiano, sistemas de coordenadas y límites de integración con aplicaciones en ingeniería civil, mecánica, eléctrica, física y medicina',
-      screen: 'theory',
-      color: '#F59E0B',
-      featured: false
-    },
-    {
-      icon: Dumbbell,
-      title: 'Ejercicios',
-      description: 'Problemas básicos, intermedios y avanzados: volumen de estructuras, momentos de inercia, campos electromagnéticos y distribuciones de masa',
-      screen: 'exercises',
-      color: '#EF4444',
-      featured: false
     },
     {
       icon: BarChart3,
@@ -136,15 +120,22 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ colors, navigateTo, historyCoun
             marginBottom: 'clamp(12px, 3vw, 16px)'
           }}
         >
-          <img
-            src={logoImage}
-            alt="INT3GRA Logo"
-            style={{ 
+          <div
+            style={{
+              width: 'clamp(40px, 10vw, 60px)',
               height: 'clamp(40px, 10vw, 60px)',
-              width: 'auto',
-              display: 'block'
-            }} 
-          />
+              background: colors.accent2,
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '1.5rem',
+              fontWeight: '900',
+              color: '#000'
+            }}
+          >
+            ∫∫∫
+          </div>
         </motion.div>
       </div>
 
