@@ -38,7 +38,9 @@ export interface ErrorCheckResult {
 }
 
 class AIClient {
-  private baseURL = 'http://localhost:5000/api/ai';
+  private baseURL = (import.meta as any).env?.PROD 
+    ? '/.netlify/functions'  // Producción (Netlify)
+    : 'http://localhost:5000/api/ai';  // Desarrollo local
 
   /**
    * Explica una integral específica basada en una pregunta del usuario
