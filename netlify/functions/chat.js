@@ -30,17 +30,121 @@ exports.handler = async (event, context) => {
     const { message, context: chatContext, conversationHistory } = JSON.parse(event.body);
 
     // Debug: Verificar configuración
-    console.log('=== DEBUG GROQ ===');
-    console.log('API Key disponible:', !!process.env.GROQ_API_KEY);
-    console.log('API Key length:', process.env.GROQ_API_KEY ? process.env.GROQ_API_KEY.length : 0);
+    console.log('=== DEBUG AI ===');
+    console.log('DeepSeek Key disponible:', !!process.env.DEEPSEEK_API_KEY);
+    console.log('Groq Key disponible:', !!process.env.GROQ_API_KEY);
     console.log('Mensaje:', message);
     
-    // Prioridad: Groq > OpenAI > Fallback local
+    // Prioridad: DeepSeek > Groq > Fallback local
     
-    // Intentar con Groq primero (gratis y rápido)
+    // Intentar con DeepSeek primero (mejor para matemáticas)
+    if (process.env.DEEPSEEK_API_KEY) {
+      try {
+        console.log('Intentando conectar con DeepSeek...');
+        
+        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: [
+              {
+                role: "system",
+                content: `Eres un profesor experto en INTEGRALES TRIPLES y cálculo multivariable. Respondes TODO tipo de preguntas sobre este tema.
+
+🎯 TIPOS DE PREGUNTAS QUE MANEJAS:
+
+**CONCEPTUALES:**
+- ¿Qué es el Jacobiano? ¿Por qué se usa?
+- ¿Cuándo usar coordenadas cilíndricas/esféricas?
+- ¿Cómo establecer límites de integración?
+- ¿Qué significa geométricamente una integral triple?
+
+**METODOLÓGICAS:**
+- ¿Hay un método más fácil para resolver esto?
+- ¿Cómo cambio de coordenadas cartesianas a cilíndricas?
+- ¿Cuál es el orden de integración más conveniente?
+- ¿Cómo visualizo esta región de integración?
+
+**PASO A PASO:**
+- Explícame cómo resolver esta integral detalladamente
+- ¿Por qué este resultado es correcto?
+- ¿Cómo verifico mi respuesta?
+- Muéstrame cada paso del cálculo
+
+**COMPARATIVAS:**
+- ¿Cuál es mejor: cartesianas vs cilíndricas vs esféricas?
+- ¿Qué diferencia hay entre estos métodos?
+- ¿Por qué un sistema es más eficiente que otro?
+
+**APLICACIONES:**
+- ¿Para qué sirven las integrales triples en la vida real?
+- ¿Cómo calculo volúmenes, masas, centros de masa?
+- ¿Qué problemas físicos resuelvo con esto?
+
+**ERRORES COMUNES:**
+- ¿Por qué me da un resultado diferente?
+- ¿Qué estoy haciendo mal en los límites?
+- ¿Cómo evito errores típicos?
+
+📝 FORMATO DE RESPUESTA:
+- Respuesta DIRECTA y ESPECÍFICA a la pregunta
+- Usa LaTeX: \\(x^2 + y^2\\) inline, \\[\\iiint f(x,y,z)\\,dV\\] display
+- Ejemplos concretos cuando sea útil
+- Pasos numerados para procedimientos
+- Explicaciones intuitivas + rigor matemático
+- SIEMPRE en español
+- Tono educativo y amigable
+
+🚫 NO HAGAS:
+- Respuestas genéricas o plantillas
+- "Consulta tu libro de texto"
+- Evadir preguntas específicas
+- Respuestas demasiado cortas sin explicación`
+              },
+              ...(conversationHistory || chatContext || []),
+              { role: "user", content: message }
+            ],
+            temperature: 0.7,
+            max_tokens: 1500
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`DeepSeek API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        console.log('✅ DeepSeek respondió exitosamente');
+        return {
+          statusCode: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          },
+          body: JSON.stringify({
+            success: true,
+            response: data.choices[0].message.content,
+            timestamp: Date.now(),
+            source: 'deepseek'
+          })
+        };
+      } catch (deepseekError) {
+        console.error('❌ Error con DeepSeek:', deepseekError.message || deepseekError);
+        // Continuar a Groq como fallback
+      }
+    } else {
+      console.log('❌ No hay API Key de DeepSeek configurada');
+    }
+    
+    // Fallback a Groq si DeepSeek falla
     if (process.env.GROQ_API_KEY) {
       try {
-        console.log('Intentando conectar con Groq...');
+        console.log('Intentando conectar con Groq como fallback...');
         const Groq = (await import('groq-sdk')).default;
         const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
         
