@@ -29,11 +29,18 @@ exports.handler = async (event, context) => {
   try {
     const { message, context: chatContext, conversationHistory } = JSON.parse(event.body);
 
+    // Debug: Verificar configuración
+    console.log('=== DEBUG GROQ ===');
+    console.log('API Key disponible:', !!process.env.GROQ_API_KEY);
+    console.log('API Key length:', process.env.GROQ_API_KEY ? process.env.GROQ_API_KEY.length : 0);
+    console.log('Mensaje:', message);
+    
     // Prioridad: Groq > OpenAI > Fallback local
     
     // Intentar con Groq primero (gratis y rápido)
     if (process.env.GROQ_API_KEY) {
       try {
+        console.log('Intentando conectar con Groq...');
         const Groq = (await import('groq-sdk')).default;
         const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
         
@@ -101,6 +108,7 @@ exports.handler = async (event, context) => {
           max_tokens: 1500
         });
 
+        console.log('✅ Groq respondió exitosamente');
         return {
           statusCode: 200,
           headers: {
@@ -115,9 +123,12 @@ exports.handler = async (event, context) => {
           })
         };
       } catch (groqError) {
-        console.error('Error con Groq:', groqError);
+        console.error('❌ Error con Groq:', groqError.message || groqError);
+        console.error('Tipo de error:', groqError.constructor.name);
         // Continuar al fallback
       }
+    } else {
+      console.log('❌ No hay API Key de Groq configurada');
     }
 
     // Fallback local inteligente basado en palabras clave
