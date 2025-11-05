@@ -3,7 +3,7 @@ import { ArrowLeft, Moon, Sun, Calculator, Eye, BarChart3, MessageCircle } from 
 import { motion } from 'framer-motion';
 import { HistoryItem, Exercise, IntegralStep } from '../App';
 import MathKeyboard from './MathKeyboard';
-import { improvedSolver } from '../services/ImprovedIntegralSolver';
+import { universalSolver } from '../services/UniversalIntegralSolver';
 
 interface SolverScreenProps {
   colors: any;
@@ -108,8 +108,8 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
 
       const startTime = Date.now();
       
-      // Usar el solver mejorado
-      const solverResult = await improvedSolver.solveTripleIntegral(
+      // Usar el solver universal (resuelve CUALQUIER integral)
+      const solverResult = await universalSolver.solveAnyTripleIntegral(
         functionInput,
         {
           x: [xMinNum, xMaxNum],
@@ -129,7 +129,7 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
       const integralValue = solverResult.result;
 
       // Convertir los pasos del solver a IntegralStep[]
-      const steps: IntegralStep[] = solverResult.steps.map((stepText, index) => ({
+      const steps: IntegralStep[] = solverResult.steps.map((stepText: string, index: number) => ({
         step: index + 1,
         description: stepText.includes('**') ? stepText.split('**')[1] || stepText : stepText,
         equation: stepText.includes('∫') ? stepText : `Paso ${index + 1}`,
@@ -161,7 +161,12 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
         metadata: {
           difficulty: coordType === 'cartesian' ? 2 : coordType === 'cylindrical' ? 3 : 4,
           jacobian: coordType === 'cartesian' ? '1' : coordType === 'cylindrical' ? 'r' : 'ρ sin(φ)',
-          method: 'Suma de Riemann'
+          method: `${solverResult.method} (${(solverResult.accuracy * 100).toFixed(1)}% precisión)`,
+          confidence: solverResult.accuracy,
+          analysis: {
+            iterations: solverResult.iterations,
+            accuracy: solverResult.accuracy
+          }
         }
       };
 
