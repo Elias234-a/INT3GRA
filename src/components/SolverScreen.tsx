@@ -3,6 +3,7 @@ import { ArrowLeft, Moon, Sun, Calculator, Eye, BarChart3, MessageCircle } from 
 import { motion } from 'framer-motion';
 import { HistoryItem, Exercise, IntegralStep } from '../App';
 import MathKeyboard from './MathKeyboard';
+import { improvedSolver } from '../services/ImprovedIntegralSolver';
 
 interface SolverScreenProps {
   colors: any;
@@ -39,6 +40,7 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
   const [error, setError] = useState('');
   const [currentIntegralId, setCurrentIntegralId] = useState<string | null>(null);
   const hasAutoSolved = useRef(false);
+  const [showExamples, setShowExamples] = useState(false);
 
   useEffect(() => {
     if (prefilledExercise && !hasAutoSolved.current) {
@@ -105,65 +107,34 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
       }
 
       const startTime = Date.now();
-      const divisions = 20;
-      const dx = (xMaxNum - xMinNum) / divisions;
-      const dy = (yMaxNum - yMinNum) / divisions;
-      const dz = (zMaxNum - zMinNum) / divisions;
+      
+      // Usar el solver mejorado
+      const solverResult = await improvedSolver.solveTripleIntegral(
+        functionInput,
+        {
+          x: [xMinNum, xMaxNum],
+          y: [yMinNum, yMaxNum],
+          z: [zMinNum, zMaxNum]
+        },
+        coordType as 'cartesian' | 'cylindrical' | 'spherical'
+      );
 
-      let sum = 0;
-
-      for (let i = 0; i < divisions; i++) {
-        for (let j = 0; j < divisions; j++) {
-          for (let k = 0; k < divisions; k++) {
-            const x = xMinNum + (i + 0.5) * dx;
-            const y = yMinNum + (j + 0.5) * dy;
-            const z = zMinNum + (k + 0.5) * dz;
-
-            let funcValue = evaluateFunction(functionInput, x, y, z);
-            
-            if (coordType === 'cylindrical') {
-              const r = Math.sqrt(x * x + y * y);
-              funcValue *= r;
-            } else if (coordType === 'spherical') {
-              const rho = Math.sqrt(x * x + y * y + z * z);
-              const phi = Math.acos(z / (rho || 1));
-              funcValue *= rho * rho * Math.sin(phi);
-            }
-
-            sum += funcValue;
-          }
-        }
-      }
-
-      const integralValue = sum * dx * dy * dz;
       const calculationTime = Date.now() - startTime;
 
-      const steps: IntegralStep[] = [
-        {
-          step: 1,
-          description: 'Identificar la región de integración',
-          equation: `R: ${xMin}  x  ${xMax}, ${yMin}  y  ${yMax}, ${zMin}  z  ${zMax}`,
-          explanation: `La región está definida por los límites dados.`
-        },
-        {
-          step: 2,
-          description: 'Escribir la integral triple',
-          equation: ` ${functionInput} dV`,
-          explanation: `Integral triple de la función ${functionInput}.`
-        },
-        {
-          step: 3,
-          description: 'Aplicar el método numérico',
-          equation: `Suma de Riemann con ${divisions} subdivisiones`,
-          explanation: 'Aproximación numérica.'
-        },
-        {
-          step: 4,
-          description: 'Resultado',
-          equation: ` ${integralValue.toFixed(6)}`,
-          explanation: `El valor aproximado es ${integralValue.toFixed(6)}.`
-        }
-      ];
+      if (!solverResult.success) {
+        setError(solverResult.error || 'Error en el cálculo');
+        return;
+      }
+
+      const integralValue = solverResult.result;
+
+      // Convertir los pasos del solver a IntegralStep[]
+      const steps: IntegralStep[] = solverResult.steps.map((stepText, index) => ({
+        step: index + 1,
+        description: stepText.includes('**') ? stepText.split('**')[1] || stepText : stepText,
+        equation: stepText.includes('∫') ? stepText : `Paso ${index + 1}`,
+        explanation: stepText
+      }));
 
       const integralId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -202,10 +173,24 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
       console.log('✅ Result establecido:', historyItem.result);
       console.log('✅ ID integral:', integralId);
 
-    } catch (err) {
-      console.error('❌ Error calculando:', err);
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+    } catch (error) {
+      console.error('Error calculando integral:', error);
+      setError('Error calculando la integral. Verifica la función y los límites.');
     }
+  };
+
+  const loadExample = (example: any) => {
+    setFunctionInput(example.function);
+    setXMin(example.limits.x[0].toString());
+    setXMax(example.limits.x[1].toString());
+    setYMin(example.limits.y[0].toString());
+    setYMax(example.limits.y[1].toString());
+    setZMin(example.limits.z[0].toString());
+    setZMax(example.limits.z[1].toString());
+    setCoordType(example.system);
+    setShowExamples(false);
+    setResult(null);
+    setError('');
   };
 
   return (
