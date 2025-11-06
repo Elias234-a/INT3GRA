@@ -42,6 +42,7 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
   const [currentIntegralId, setCurrentIntegralId] = useState<string | null>(null);
   const hasAutoSolved = useRef(false);
   const [showExamples, setShowExamples] = useState(false);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
   useEffect(() => {
     if (prefilledExercise && !hasAutoSolved.current) {
@@ -359,32 +360,68 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
               }}
             />
             
-            {/* Teclado Matemático */}
-            <div style={{ marginTop: '16px' }}>
-              <MathKeyboard
-                onInsert={(symbol) => setFunctionInput(prev => prev + symbol)}
-                onBackspace={() => setFunctionInput(prev => prev.slice(0, -1))}
-                onClear={() => setFunctionInput('')}
-                currentInput={functionInput}
-                colors={colors}
-                isDark={isDark}
-                showLatexPreview={false}
-                compactMode={true}
-              />
-            </div>
+            {/* Teclado Matemático - Solo activo cuando no hay input de límites enfocado */}
+            {!focusedInput && (
+              <div style={{ marginTop: '16px' }}>
+                <MathKeyboard
+                  onInsert={(symbol) => setFunctionInput(prev => prev + symbol)}
+                  onBackspace={() => setFunctionInput(prev => prev.slice(0, -1))}
+                  onClear={() => setFunctionInput('')}
+                  currentInput={functionInput}
+                  colors={colors}
+                  isDark={isDark}
+                  showLatexPreview={false}
+                  compactMode={true}
+                />
+              </div>
+            )}
+            
+            {/* Mensaje cuando hay input de límites enfocado */}
+            {focusedInput && (
+              <div style={{ 
+                marginTop: '16px', 
+                padding: '12px', 
+                background: isDark ? '#374151' : '#F3F4F6',
+                borderRadius: '8px',
+                border: '2px solid #10B981',
+                textAlign: 'center',
+                color: colors.text
+              }}>
+                📝 Editando {focusedInput}. Escribe directamente o haz click fuera para usar el teclado matemático.
+              </div>
+            )}
           </div>
 
           {/* Límites */}
           <div style={{ marginBottom: '24px' }}>
-            <label style={{ 
-              fontWeight: '700', 
-              marginBottom: '12px', 
-              display: 'block', 
-              color: colors.text,
-              textTransform: 'uppercase'
-            }}>
-              Límites de Integración
-            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <label style={{ 
+                fontWeight: '700', 
+                color: colors.text,
+                textTransform: 'uppercase'
+              }}>
+                Límites de Integración
+              </label>
+              <button
+                onClick={() => {
+                  setXMin('0'); setXMax('1');
+                  setYMin('0'); setYMax('1');
+                  setZMin('0'); setZMax('1');
+                }}
+                style={{
+                  background: '#EF4444',
+                  color: '#FFFFFF',
+                  border: '2px solid #000000',
+                  borderRadius: '6px',
+                  padding: '6px 12px',
+                  fontSize: '0.8rem',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                🔄 Resetear
+              </button>
+            </div>
             
             {/* Límites X */}
             <div style={{ marginBottom: '16px' }}>
@@ -402,6 +439,8 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
                   type="text" 
                   value={xMin} 
                   onChange={(e) => setXMin(e.target.value)} 
+                  onFocus={() => setFocusedInput('límite X mínimo')}
+                  onBlur={() => setFocusedInput(null)}
                   placeholder="0"
                   tabIndex={1}
                   readOnly={false}
@@ -427,6 +466,8 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
                   type="text" 
                   value={xMax} 
                   onChange={(e) => setXMax(e.target.value)} 
+                  onFocus={() => setFocusedInput('límite X máximo')}
+                  onBlur={() => setFocusedInput(null)}
                   placeholder="1"
                   tabIndex={2}
                   readOnly={false}
@@ -466,6 +507,8 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
                   type="text" 
                   value={yMin} 
                   onChange={(e) => setYMin(e.target.value)} 
+                  onFocus={() => setFocusedInput('límite Y mínimo')}
+                  onBlur={() => setFocusedInput(null)}
                   placeholder="0"
                   tabIndex={3}
                   readOnly={false}
@@ -491,6 +534,8 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
                   type="text" 
                   value={yMax} 
                   onChange={(e) => setYMax(e.target.value)} 
+                  onFocus={() => setFocusedInput('límite Y máximo')}
+                  onBlur={() => setFocusedInput(null)}
                   placeholder="1"
                   tabIndex={4}
                   readOnly={false}
@@ -530,6 +575,8 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
                   type="text" 
                   value={zMin} 
                   onChange={(e) => setZMin(e.target.value)} 
+                  onFocus={() => setFocusedInput('límite Z mínimo')}
+                  onBlur={() => setFocusedInput(null)}
                   placeholder="0"
                   tabIndex={5}
                   readOnly={false}
@@ -555,6 +602,8 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
                   type="text" 
                   value={zMax} 
                   onChange={(e) => setZMax(e.target.value)} 
+                  onFocus={() => setFocusedInput('límite Z máximo')}
+                  onBlur={() => setFocusedInput(null)}
                   placeholder="1"
                   tabIndex={6}
                   readOnly={false}
