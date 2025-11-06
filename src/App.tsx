@@ -6,7 +6,7 @@ import TheoryScreen from './components/TheoryScreen';
 import SolverScreen from './components/SolverScreen';
 import ExercisesScreen from './components/ExercisesScreen';
 import HistoryScreen from './components/HistoryScreen';
-import VisualizationScreen from './components/VisualizationScreen';
+import ImprovedVisualizationScreen from './components/ImprovedVisualizationScreen';
 import SettingsScreen from './components/SettingsScreen';
 import SplashScreen from './components/SplashScreen';
 import CaseStudyScreen from './components/CaseStudyScreen';
@@ -331,7 +331,6 @@ const App = () => {
             prefilledExercise={prefilledExercise}
             isDark={isDark}
             toggleTheme={() => setIsDark(!isDark)}
-            precision={precision}
             onVisualize={handleVisualization}
             onCompare={handleComparison}
             onChatWithContext={handleChatWithContext}
@@ -362,7 +361,7 @@ const App = () => {
           />
         );
       case 'visualization':
-        return <VisualizationScreen colors={colors} onBack={() => navigateTo('home')} isDark={isDark} toggleTheme={() => setIsDark(!isDark)} integralData={integralVisualizationData} />;
+        return <ImprovedVisualizationScreen colors={colors} onBack={() => navigateTo('home')} isDark={isDark} toggleTheme={() => setIsDark(!isDark)} integralData={integralVisualizationData} />;
       case 'casestudy':
         return (
           <CaseStudyScreen 
