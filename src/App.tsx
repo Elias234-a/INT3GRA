@@ -7,6 +7,7 @@ import SolverScreen from './components/SolverScreen';
 import ExercisesScreen from './components/ExercisesScreen';
 import HistoryScreen from './components/HistoryScreen';
 import ImprovedVisualizationScreen from './components/ImprovedVisualizationScreen';
+import VisualizationScreen from './components/VisualizationScreen';
 import SettingsScreen from './components/SettingsScreen';
 import SplashScreen from './components/SplashScreen';
 import CaseStudyScreen from './components/CaseStudyScreen';
@@ -295,6 +296,7 @@ const App = () => {
   };
 
   const handleVisualization = (integralData: any) => {
+    console.log('🎨 Navegando a visualización con datos:', integralData);
     // Guardar los datos de la integral para la visualización
     setIntegralVisualizationData(integralData);
     navigateTo('visualization');
@@ -361,7 +363,13 @@ const App = () => {
           />
         );
       case 'visualization':
-        return <ImprovedVisualizationScreen colors={colors} onBack={() => navigateTo('home')} isDark={isDark} toggleTheme={() => setIsDark(!isDark)} integralData={integralVisualizationData} />;
+        console.log('📊 Renderizando VisualizationScreen con datos:', integralVisualizationData);
+        try {
+          return <ImprovedVisualizationScreen colors={colors} onBack={() => navigateTo('home')} isDark={isDark} toggleTheme={() => setIsDark(!isDark)} integralData={integralVisualizationData} />;
+        } catch (error) {
+          console.error('❌ Error con ImprovedVisualizationScreen, usando fallback:', error);
+          return <VisualizationScreen colors={colors} onBack={() => navigateTo('home')} isDark={isDark} toggleTheme={() => setIsDark(!isDark)} integralData={integralVisualizationData} />;
+        }
       case 'casestudy':
         return (
           <CaseStudyScreen 

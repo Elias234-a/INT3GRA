@@ -25,19 +25,26 @@ const ImprovedVisualizationScreen: React.FC<VisualizationScreenProps> = ({
   const [showRegion, setShowRegion] = useState(true);
   const [showFunction, setShowFunction] = useState(true);
   const [resolution, setResolution] = useState(30);
+  const [error, setError] = useState<string | null>(null);
   const animationRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (integralData) {
-      console.log('📊 Datos de integral recibidos:', integralData);
-      const func = integralData.function || 'x*y*z';
-      setFunctionInput(func);
-      setCoordinateSystem(integralData.coordinateSystem || 'cartesian');
-      
-      plotTripleIntegral(func, integralData.limits, integralData.coordinateSystem || 'cartesian');
-    } else {
-      // Gráfica por defecto
-      plotTripleIntegral('x*y*z', { x: [-1, 1], y: [-1, 1], z: [-1, 1] }, 'cartesian');
+    console.log('🎨 ImprovedVisualizationScreen montado con datos:', integralData);
+    try {
+      if (integralData) {
+        console.log('📊 Datos de integral recibidos:', integralData);
+        const func = integralData.function || 'x*y*z';
+        setFunctionInput(func);
+        setCoordinateSystem(integralData.coordinateSystem || 'cartesian');
+        
+        plotTripleIntegral(func, integralData.limits, integralData.coordinateSystem || 'cartesian');
+      } else {
+        console.log('📊 Sin datos de integral, usando valores por defecto');
+        // Gráfica por defecto
+        plotTripleIntegral('x*y*z', { x: [-1, 1], y: [-1, 1], z: [-1, 1] }, 'cartesian');
+      }
+    } catch (error) {
+      console.error('❌ Error en useEffect de ImprovedVisualizationScreen:', error);
     }
   }, [integralData, isDark]);
 
@@ -87,9 +94,14 @@ const ImprovedVisualizationScreen: React.FC<VisualizationScreenProps> = ({
 
   // Función principal para graficar integrales triples
   const plotTripleIntegral = (func: string, limits: any, system: string) => {
-    if (!plotRef.current) return;
+    console.log('🎨 Iniciando plotTripleIntegral:', { func, limits, system });
+    
+    if (!plotRef.current) {
+      console.error('❌ plotRef.current es null');
+      return;
+    }
 
-    console.log('🎨 Graficando integral triple:', { func, limits, system });
+    console.log('✅ plotRef.current existe, procediendo...');
 
     try {
       const traces: any[] = [];
@@ -154,9 +166,12 @@ const ImprovedVisualizationScreen: React.FC<VisualizationScreenProps> = ({
       };
 
       Plotly.newPlot(plotRef.current, traces, layout, config);
+      console.log('✅ Gráfica creada exitosamente');
+      setError(null);
 
     } catch (error) {
-      console.error('Error al graficar:', error);
+      console.error('❌ Error al graficar:', error);
+      setError(`Error al crear la gráfica: ${error}`);
     }
   };
 
@@ -461,6 +476,21 @@ const ImprovedVisualizationScreen: React.FC<VisualizationScreenProps> = ({
               <p><strong>Resultado:</strong> {integralData.result.toFixed(6)}</p>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {error && (
+        <div style={{
+          margin: '1rem',
+          padding: '1rem',
+          background: '#FEE2E2',
+          border: '3px solid #EF4444',
+          borderRadius: '12px',
+          color: '#DC2626'
+        }}>
+          <h3 style={{ margin: '0 0 0.5rem 0' }}>❌ Error de Visualización</h3>
+          <p style={{ margin: 0 }}>{error}</p>
         </div>
       )}
 
