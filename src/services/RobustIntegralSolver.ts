@@ -105,7 +105,7 @@ export class RobustIntegralSolver {
     system: string
   ): number {
     
-    const n = 20; // Subdivisiones
+    const n = 50; // Más subdivisiones para mayor precisión
     const dx = (limits.x[1] - limits.x[0]) / n;
     const dy = (limits.y[1] - limits.y[0]) / n;
     const dz = (limits.z[1] - limits.z[0]) / n;

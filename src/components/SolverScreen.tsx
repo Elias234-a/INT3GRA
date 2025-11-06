@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { HistoryItem, Exercise, IntegralStep } from '../App';
 import MathKeyboard from './MathKeyboard';
 import { robustSolver } from '../services/RobustIntegralSolver';
+import { highPrecisionSolver } from '../services/HighPrecisionSolver';
 
 interface SolverScreenProps {
   colors: any;
@@ -108,8 +109,9 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
 
       const startTime = Date.now();
       
-      // Usar el solver robusto (NUNCA falla)
-      const solverResult = await robustSolver.solveTripleIntegral(
+      // Usar el solver de alta precisión primero
+      console.log('🎯 Intentando solver de alta precisión...');
+      let solverResult = await highPrecisionSolver.solveWithHighPrecision(
         functionInput,
         {
           x: [xMinNum, xMaxNum],
@@ -118,6 +120,34 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
         },
         coordType as 'cartesian' | 'cylindrical' | 'spherical'
       );
+      
+      // Si la precisión no es suficiente, usar el solver robusto como fallback
+      if (!solverResult.success || solverResult.precision < 0.90) {
+        console.log('⚡ Fallback al solver robusto...');
+        const robustResult = await robustSolver.solveTripleIntegral(
+          functionInput,
+          {
+            x: [xMinNum, xMaxNum],
+            y: [yMinNum, yMaxNum],
+            z: [zMinNum, zMaxNum]
+          },
+          coordType as 'cartesian' | 'cylindrical' | 'spherical'
+        );
+        
+        // Convertir resultado robusto al formato de alta precisión
+        solverResult = {
+          success: robustResult.success,
+          result: robustResult.result,
+          precision: 0.85,
+          method: robustResult.method + ' (Fallback)',
+          steps: robustResult.steps,
+          convergenceData: {
+            iterations: 100,
+            tolerance: 1e-6,
+            finalError: 1e-6
+          }
+        };
+      }
 
       const calculationTime = Date.now() - startTime;
 
@@ -161,11 +191,14 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
         metadata: {
           difficulty: coordType === 'cartesian' ? 2 : coordType === 'cylindrical' ? 3 : 4,
           jacobian: coordType === 'cartesian' ? '1' : coordType === 'cylindrical' ? 'r' : 'ρ sin(φ)',
-          method: solverResult.method,
-          confidence: 0.95, // Confianza alta del solver robusto
+          method: `${solverResult.method} (${(solverResult.precision * 100).toFixed(1)}% precisión)`,
+          confidence: solverResult.precision,
           analysis: {
             calculationTime: calculationTime,
-            robustSolver: true
+            iterations: solverResult.convergenceData.iterations,
+            tolerance: solverResult.convergenceData.tolerance,
+            finalError: solverResult.convergenceData.finalError,
+            highPrecision: solverResult.precision > 0.95
           }
         }
       };

@@ -104,8 +104,8 @@ RESPONDE SIEMPRE EN ESPAÑOL`
               ...(conversationHistory || chatContext || []),
               { role: "user", content: message }
             ],
-            temperature: 0.3, // Más determinístico para matemáticas
-            max_tokens: 2000  // Más tokens para respuestas detalladas
+            temperature: 0.1, // Máxima precisión y determinismo
+            max_tokens: 3000  // Más tokens para respuestas muy detalladas
           })
         });
 
