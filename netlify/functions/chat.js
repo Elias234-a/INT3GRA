@@ -49,62 +49,50 @@ exports.handler = async (event, context) => {
             messages: [
               {
                 role: "system",
-                content: `Eres un experto especializado en INTEGRALES TRIPLES y cálculo multivariable.
+                content: `Eres un tutor experto y amigable en integrales triples y cálculo multivariable. Tu objetivo es ayudar a estudiantes de manera clara, natural y conversacional.
 
-ÁREA DE ESPECIALIZACIÓN:
-- Integrales triples en coordenadas cartesianas, cilíndricas y esféricas
+🎯 TU ESPECIALIDAD:
+- Integrales triples (cartesianas, cilíndricas, esféricas)
 - Teoremas de integración (Gauss, Stokes, Green)
-- Aplicaciones físicas y geométricas
-- Cambios de orden de integración
-- Transformaciones de coordenadas
-- Jacobianos y determinantes
+- Aplicaciones en física, ingeniería y geometría
+- Transformaciones de coordenadas y Jacobianos
 
-INSTRUCCIONES CRÍTICAS:
-1. NO resolverás integrales triples numéricamente de forma directa
-2. EN LUGAR DE ESO, proporcionarás:
-   - El método de resolución paso a paso detallado
-   - Justificación de cada paso matemático
-   - Explicación del por qué se usa ese método
-   - Identificación de la región de integración
-   - Transformaciones de coordenadas si aplica
-   - El resultado final con análisis
+💬 ESTILO DE COMUNICACIÓN:
+- Responde de manera natural y conversacional, como ChatGPT
+- Usa un tono amigable pero profesional
+- Explica conceptos complejos de forma simple
+- Haz preguntas de seguimiento cuando sea útil
+- Usa ejemplos cotidianos para ilustrar conceptos abstractos
 
-3. Para cada respuesta DEBES incluir:
-   - Análisis de la región D de integración
-   - Determinación del sistema de coordenadas más apropiado
-   - Establecimiento de los límites de integración
-   - Explicación del Jacobiano si hay transformación
-   - Reducción paso a paso a integrales simples
-   - Técnicas de integración específicas usadas
-   - Verificación o interpretación geométrica del resultado
+🧠 CÓMO RESPONDER:
+1. **Para preguntas conceptuales:** Explica de manera clara y da ejemplos
+2. **Para problemas específicos:** Guía paso a paso sin hacer los cálculos
+3. **Para dudas generales:** Responde naturalmente y ofrece ayuda adicional
+4. **Para temas complejos:** Desglosa en partes más simples
 
-4. Si el usuario pregunta sobre:
-   - Coordenadas cartesianas: Explica cómo identificar límites en x, y, z
-   - Coordenadas cilíndricas: Justifica cuándo usarlas, explica r, θ, z
-   - Coordenadas esféricas: Detalla ρ, θ, φ y sus rangos
-   - Cambio de orden: Muestra todas las permutaciones posibles
-   - Aplicaciones: Volumen, masa, centro de masa, momentos de inercia
+📝 FORMATO DE RESPUESTAS:
+- Usa lenguaje natural, no listas rígidas
+- Incluye emojis ocasionales para hacer más amigable
+- Usa notación matemática cuando sea necesario: \\(x^2\\) o \\[\\iiint f(x,y,z)\\,dV\\]
+- Haz conexiones con conceptos que ya conocen
 
-5. CONTEXTO Y EXPANSIÓN:
-   - Proporciona ejemplos relacionados si es relevante
-   - Sugiere extensiones o variaciones del problema
-   - Conecta con teoremas de integración cuando sea pertinente
-   - Explica las dificultades comunes en este tipo de integrales
+🎓 ENFOQUE PEDAGÓGICO:
+- Explica el "por qué", no solo el "cómo"
+- Conecta con aplicaciones reales
+- Menciona errores comunes y cómo evitarlos
+- Sugiere formas de verificar resultados
 
-6. RESTRICCIONES:
-   - Solo responde sobre integrales triples y temas directamente relacionados
-   - Si la pregunta sale de este ámbito, redirecciona educadamente
-   - Mantén rigor matemático en todas las explicaciones
-   - Usa notación LaTeX: \\(x^2\\) inline, \\[\\iiint f(x,y,z)\\,dV\\] display
+⚠️ LÍMITES:
+- Si preguntan algo fuera de integrales triples, redirige amablemente
+- No hagas cálculos numéricos directos (el sistema ya los hace)
+- Mantén rigor matemático pero con explicaciones accesibles
 
-CONTEXTO DETECTADO: Integrales Triples
-NIVEL DE DETALLE: Expansivo y pedagógico
-RESPONDE SIEMPRE EN ESPAÑOL`
+Responde siempre en español de manera natural y conversacional.`
               },
               ...(conversationHistory || chatContext || []),
               { role: "user", content: message }
             ],
-            temperature: 0.1, // Máxima precisión y determinismo
+            temperature: 0.4, // Balance entre precisión y naturalidad
             max_tokens: 3000  // Más tokens para respuestas muy detalladas
           })
         });
@@ -231,9 +219,9 @@ RESPONDE SIEMPRE EN ESPAÑOL`
       console.log('❌ No hay API Key de Groq configurada');
     }
 
-    // Fallback especializado en integrales triples
-    console.log('🧠 Activando fallback especializado...');
-    let fallbackResponse = "**🎓 Experto en Integrales Triples - INTEGRA (Modo Especializado)**\n\n";
+    // Fallback conversacional en integrales triples
+    console.log('🧠 Activando fallback conversacional...');
+    let fallbackResponse = "¡Hola! 👋 Soy tu tutor de integrales triples. ";
     
     const messageLower = message.toLowerCase();
     
@@ -241,9 +229,9 @@ RESPONDE SIEMPRE EN ESPAÑOL`
     
     // Detectar tipo de pregunta y responder específicamente
     if (messageLower.includes('método') && messageLower.includes('fácil')) {
-      fallbackResponse += `**¿Hay un método más fácil?**
+      fallbackResponse += `Entiendo que buscas un método más sencillo. Te puedo ayudar con eso! 😊
 
-Para la función que estás analizando, considera:
+Mira, para elegir el mejor método, lo primero que debes hacer es observar tu función:
 
 **1. Analizar la simetría:**
 - Si tiene \\(x^2 + y^2\\) → **Cilíndricas** son más fáciles
@@ -270,9 +258,9 @@ Para la función que estás analizando, considera:
 
 *Para análisis específico de tu integral, configura DeepSeek AI.*`;
     } else if (messageLower.includes('detalle') || messageLower.includes('paso')) {
-      fallbackResponse += `**Explicación Paso a Paso**
+      fallbackResponse += `Perfecto! Te explico paso a paso cómo resolver integrales triples. Es más fácil de lo que parece 😉
 
-**Pasos generales para resolver integrales triples:**
+Aquí tienes la estrategia general que siempre funciona:
 
 **1. Identificar la región D:**
 - Analiza los límites de integración
@@ -432,32 +420,29 @@ Para una esfera \\(x^2 + y^2 + z^2 ≤ 1\\):
 
 **🔄 Cambio de región:** A veces cambiar el orden requiere redefinir la región D completamente.`;
     } else {
-      fallbackResponse += `**🎓 Tutor de Integrales Triples**
+      fallbackResponse += `Estoy aquí para ayudarte con cualquier duda sobre integrales triples! 🤓
 
-Puedo ayudarte con **cualquier pregunta** sobre integrales triples:
+Puedo explicarte desde conceptos básicos hasta problemas complejos. Por ejemplo:
 
-**📚 Conceptos:**
-- Jacobiano, coordenadas, límites
-- Interpretación geométrica
-- Aplicaciones físicas
+🔍 **Si tienes dudas conceptuales**, puedo explicarte:
+- Qué es el Jacobiano y por qué es importante
+- Cuándo conviene usar cada sistema de coordenadas
+- Cómo interpretar geométricamente los resultados
 
-**🔧 Métodos:**
-- Cuándo usar cada sistema de coordenadas
-- Cómo cambiar entre sistemas
-- Trucos para simplificar cálculos
+🛠️ **Si necesitas ayuda práctica**, te puedo guiar con:
+- Estrategias para elegir el mejor método
+- Cómo establecer límites de integración correctos
+- Trucos para simplificar cálculos complicados
 
-**📝 Resolución:**
-- Pasos detallados
-- Verificación de resultados
-- Errores comunes
+💡 **Algunos ejemplos de preguntas que puedes hacerme:**
+- "¿Por qué mi integral sale negativa?"
+- "¿Cuándo debo usar coordenadas esféricas?"
+- "¿Cómo sé si mis límites están bien?"
+- "¿Hay algún truco para esta función?"
 
-**❓ Pregúntame cosas como:**
-- "¿Hay un método más fácil?"
-- "Explícame el Jacobiano"
-- "¿Cuándo uso esféricas?"
-- "¿Cómo establezco estos límites?"
+¡No dudes en preguntarme lo que necesites! Estoy aquí para hacer que las integrales triples sean más fáciles de entender. 😊
 
-*Para respuestas más detalladas y específicas, configura tu API key de Groq.*`;
+*Para respuestas aún más personalizadas, configura tu API key de DeepSeek.*`;
     }
 
     fallbackResponse += "\n\n*Para respuestas más detalladas, configura tu API key de Groq.*";
