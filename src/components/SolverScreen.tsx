@@ -402,7 +402,10 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
                   type="text" 
                   value={xMin} 
                   onChange={(e) => setXMin(e.target.value)} 
-                  placeholder="0" 
+                  placeholder="0"
+                  tabIndex={1}
+                  readOnly={false}
+                  disabled={false} 
                   style={{ 
                     width: '100px',
                     padding: '10px', 
@@ -412,7 +415,11 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
                     color: colors.text,
                     fontFamily: 'monospace',
                     fontSize: '1rem',
-                    textAlign: 'center'
+                    textAlign: 'center',
+                    pointerEvents: 'auto',
+                    userSelect: 'text',
+                    cursor: 'text',
+                    zIndex: 20
                   }} 
                 />
                 <span style={{ fontWeight: '700', color: colors.text }}>≤ x ≤</span>
@@ -420,7 +427,10 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
                   type="text" 
                   value={xMax} 
                   onChange={(e) => setXMax(e.target.value)} 
-                  placeholder="1" 
+                  placeholder="1"
+                  tabIndex={2}
+                  readOnly={false}
+                  disabled={false} 
                   style={{ 
                     width: '100px',
                     padding: '10px', 
@@ -430,7 +440,11 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
                     color: colors.text,
                     fontFamily: 'monospace',
                     fontSize: '1rem',
-                    textAlign: 'center'
+                    textAlign: 'center',
+                    pointerEvents: 'auto',
+                    userSelect: 'text',
+                    cursor: 'text',
+                    zIndex: 20
                   }} 
                 />
               </div>
@@ -452,7 +466,10 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
                   type="text" 
                   value={yMin} 
                   onChange={(e) => setYMin(e.target.value)} 
-                  placeholder="0" 
+                  placeholder="0"
+                  tabIndex={3}
+                  readOnly={false}
+                  disabled={false} 
                   style={{ 
                     width: '100px',
                     padding: '10px', 
@@ -462,7 +479,11 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
                     color: colors.text,
                     fontFamily: 'monospace',
                     fontSize: '1rem',
-                    textAlign: 'center'
+                    textAlign: 'center',
+                    pointerEvents: 'auto',
+                    userSelect: 'text',
+                    cursor: 'text',
+                    zIndex: 20
                   }} 
                 />
                 <span style={{ fontWeight: '700', color: colors.text }}>≤ y ≤</span>
@@ -470,7 +491,10 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
                   type="text" 
                   value={yMax} 
                   onChange={(e) => setYMax(e.target.value)} 
-                  placeholder="1" 
+                  placeholder="1"
+                  tabIndex={4}
+                  readOnly={false}
+                  disabled={false} 
                   style={{ 
                     width: '100px',
                     padding: '10px', 
@@ -480,7 +504,11 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
                     color: colors.text,
                     fontFamily: 'monospace',
                     fontSize: '1rem',
-                    textAlign: 'center'
+                    textAlign: 'center',
+                    pointerEvents: 'auto',
+                    userSelect: 'text',
+                    cursor: 'text',
+                    zIndex: 20
                   }} 
                 />
               </div>
@@ -502,7 +530,10 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
                   type="text" 
                   value={zMin} 
                   onChange={(e) => setZMin(e.target.value)} 
-                  placeholder="0" 
+                  placeholder="0"
+                  tabIndex={5}
+                  readOnly={false}
+                  disabled={false} 
                   style={{ 
                     width: '100px',
                     padding: '10px', 
@@ -512,7 +543,11 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
                     color: colors.text,
                     fontFamily: 'monospace',
                     fontSize: '1rem',
-                    textAlign: 'center'
+                    textAlign: 'center',
+                    pointerEvents: 'auto',
+                    userSelect: 'text',
+                    cursor: 'text',
+                    zIndex: 20
                   }} 
                 />
                 <span style={{ fontWeight: '700', color: colors.text }}>≤ z ≤</span>
@@ -520,7 +555,10 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
                   type="text" 
                   value={zMax} 
                   onChange={(e) => setZMax(e.target.value)} 
-                  placeholder="1" 
+                  placeholder="1"
+                  tabIndex={6}
+                  readOnly={false}
+                  disabled={false} 
                   style={{ 
                     width: '100px',
                     padding: '10px', 
@@ -530,7 +568,11 @@ const SolverScreen: React.FC<SolverScreenProps> = ({
                     color: colors.text,
                     fontFamily: 'monospace',
                     fontSize: '1rem',
-                    textAlign: 'center'
+                    textAlign: 'center',
+                    pointerEvents: 'auto',
+                    userSelect: 'text',
+                    cursor: 'text',
+                    zIndex: 20
                   }} 
                 />
               </div>
