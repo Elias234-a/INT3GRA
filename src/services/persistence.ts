@@ -526,9 +526,20 @@ class PersistenceManager {
       const history = this.loadHistory();
       const sixMonthsAgo = Date.now() - (6 * 30 * 24 * 60 * 60 * 1000);
       
-      const cleaned = history.filter(item => 
-        item.timestamp.getTime() > sixMonthsAgo
-      );
+      const cleaned = history.filter(item => {
+        try {
+          // Asegurar que timestamp es un objeto Date válido
+          const timestamp = item.timestamp instanceof Date 
+            ? item.timestamp 
+            : new Date(item.timestamp);
+          
+          return timestamp.getTime() > sixMonthsAgo;
+        } catch (error) {
+          // Si no se puede convertir a fecha, mantener el elemento
+          console.warn('Elemento con timestamp inválido:', item.id);
+          return true;
+        }
+      });
       
       if (cleaned.length !== history.length) {
         this.saveHistory(cleaned);
@@ -616,9 +627,21 @@ class PersistenceManager {
    * Reviver para deserializar fechas
    */
   private dateReviver(key: string, value: any): any {
+    // Manejar formato específico con __type
     if (value && value.__type === 'Date') {
       return new Date(value.value);
     }
+    
+    // Manejar campos que sabemos que son fechas
+    if (key === 'timestamp' && typeof value === 'string') {
+      try {
+        const date = new Date(value);
+        return isNaN(date.getTime()) ? new Date() : date;
+      } catch (error) {
+        return new Date();
+      }
+    }
+    
     return value;
   }
 

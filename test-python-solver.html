@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Python Solver Connection</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; font-size: 16px; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test de Conexión Python Solver</h1>
+    
+    <button onclick="testPythonSolver()">🐍 Test Python Solver</button>
+    <button onclick="testBackendHealth()">🔧 Test Backend Health</button>
+    <button onclick="clearResults()">🗑️ Limpiar</button>
+    
+    <div id="results"></div>
+
+    <script>
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testPythonSolver() {
+            addResult('🔍 Iniciando test de Python Solver...', 'info');
+            
+            try {
+                const url = 'http://localhost:5000/api/python-solver/health';
+                addResult(`📡 Conectando a: ${url}`, 'info');
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                addResult(`📊 Status: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+                addResult(`🌐 URL: ${response.url}`, 'info');
+                
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                addResult(`📋 Headers: <pre>${JSON.stringify(headers, null, 2)}</pre>`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Respuesta exitosa: <pre>${JSON.stringify(data, null, 2)}</pre>`, 'success');
+                    
+                    if (data.python_service && data.python_service.status === 'OK') {
+                        addResult('🎉 Python Solver está funcionando correctamente!', 'success');
+                    } else {
+                        addResult('⚠️ Python Solver responde pero con estado no OK', 'error');
+                    }
+                } else {
+                    const errorText = await response.text();
+                    addResult(`❌ Error: ${errorText}`, 'error');
+                }
+
+            } catch (error) {
+                addResult(`💥 Error de conexión: ${error.message}`, 'error');
+                addResult(`🔍 Detalles: <pre>${JSON.stringify({
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                }, null, 2)}</pre>`, 'error');
+            }
+        }
+
+        async function testBackendHealth() {
+            addResult('🔍 Iniciando test de Backend Health...', 'info');
+            
+            try {
+                const url = 'http://localhost:5000/api/health';
+                addResult(`📡 Conectando a: ${url}`, 'info');
+                
+                const response = await fetch(url);
+                addResult(`📊 Status: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+
+                if (response.ok) {
+                    const data = await response.text();
+                    addResult(`✅ Backend responde: ${data}`, 'success');
+                } else {
+                    addResult(`❌ Backend no responde correctamente`, 'error');
+                }
+
+            } catch (error) {
+                addResult(`💥 Error conectando con backend: ${error.message}`, 'error');
+            }
+        }
+
+        // Test automático al cargar la página
+        window.onload = function() {
+            addResult('🚀 Página cargada. Haz clic en los botones para probar la conexión.', 'info');
+        };
+    </script>
+</body>
+</html>

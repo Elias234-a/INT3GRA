@@ -65,7 +65,19 @@ copy .env.example .env
 
 **Ver guía completa:** [CONFIGURAR-GROQ.md](CONFIGURAR-GROQ.md)
 
-5. **Iniciar el sistema**
+5. **Configurar Python Solver (Opcional - Recomendado)**
+```bash
+# Instalar Python 3.8+ desde https://python.org
+python --version
+
+# Iniciar Python Solver para cálculo simbólico avanzado
+start-python-solver.bat
+# O manualmente: cd python-solver && pip install -r requirements.txt && python app.py
+```
+
+**Ver guía completa:** [PYTHON-SOLVER-GUIDE.md](PYTHON-SOLVER-GUIDE.md)
+
+6. **Iniciar el sistema**
 
 **Opción A - Inicio automático (Windows):**
 ```bash
@@ -74,15 +86,18 @@ start-integra.bat
 
 **Opción B - Inicio manual:**
 ```bash
-# Terminal 1 - Frontend
+# Terminal 1 - Python Solver (opcional pero recomendado)
+start-python-solver.bat
+
+# Terminal 2 - Frontend
 npm run dev
 
-# Terminal 2 - Backend
+# Terminal 3 - Backend
 cd server
 npm start
 ```
 
-6. **Abrir en navegador**
+7. **Abrir en navegador**
 ```
 http://localhost:3000
 ```
@@ -106,6 +121,12 @@ http://localhost:3000
 - **Groq AI (Llama 3 70B)** - Inteligencia artificial (100% gratis)
 - **Math.js** - Cálculos matemáticos
 
+### Python Solver (Nuevo!)
+- **SymPy** - Cálculo simbólico exacto
+- **SciPy** - Integración numérica de alta precisión
+- **NumPy** - Operaciones matemáticas optimizadas
+- **Flask** - Microservicio API
+
 ### Diseño
 - **Neo-Brutalism** - Estilo visual moderno
 - **Responsive** - Adaptable a todos los dispositivos
@@ -116,8 +137,10 @@ http://localhost:3000
 
 ### 1. Resolver Integrales
 - Entrada de funciones con teclado matemático
+- **Python Solver**: Resolución simbólica exacta con SymPy + numérica con SciPy
+- **JavaScript Solver**: Fallback robusto para alta disponibilidad
 - Tres sistemas de coordenadas (cartesianas, cilíndricas, esféricas)
-- Cálculo numérico con precisión configurable
+- Transformaciones automáticas de coordenadas con jacobianos
 - Pasos detallados de resolución
 
 ### 2. Visualización 3D

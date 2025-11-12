@@ -65,7 +65,7 @@ const ComparisonScreen: React.FC<ComparisonScreenProps> = ({
 
   const analyzeFunction = async (functionStr: string): Promise<FunctionAnalysis | null> => {
     try {
-      const response = await fetch('http://localhost:5000/api/solver/analyze', {
+      const response = await fetch('http://localhost:5001/api/solver/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ expression: functionStr })

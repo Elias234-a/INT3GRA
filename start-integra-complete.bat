@@ -31,7 +31,7 @@ start "INTEGRA Backend" cmd /k "cd server && npm start"
 timeout /t 3 >nul
 
 REM Iniciar Microservicio Python
-echo 🐍 Iniciando Microservicio Python (Puerto 8000)...
+echo 🐍 Iniciando Microservicio Python (Puerto 5001)...
 start "INTEGRA Python Solver" cmd /k "cd python-solver && python app.py"
 timeout /t 3 >nul
 
@@ -47,7 +47,7 @@ echo ========================================
 echo.
 echo 🌐 Frontend:     http://localhost:3000
 echo 🔧 Backend:      http://localhost:5000
-echo 🐍 Python:       http://localhost:8000
+echo 🐍 Python:       http://localhost:5001
 echo.
 echo 📊 Funcionalidades Disponibles:
 echo    ✅ Resolución Simbólica Exacta (SymPy)

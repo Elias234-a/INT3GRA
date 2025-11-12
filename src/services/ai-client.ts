@@ -4,7 +4,7 @@
  */
 
 export interface AIExplanationRequest {
-  integral: {
+  integral?: {
     id: string;
     functionInput: string;
     limits: { x: string[]; y: string[]; z: string[] };
@@ -14,9 +14,28 @@ export interface AIExplanationRequest {
       decimal: number;
       steps?: any[];
     };
+    metadata?: {
+      solver?: string;
+      method?: string;
+      executionTime?: number;
+      confidence?: number;
+      jacobian?: string;
+    };
+    calculationData?: {
+      usedPythonSolver?: boolean;
+      pythonAvailable?: boolean;
+      stepByStep?: any[];
+    };
   };
   question: string;
+  questionType?: 'general' | 'specific' | 'conceptual' | 'computational' | 'visual' | 'comparison';
   conversationHistory?: Array<{ role: 'user' | 'ai'; content: string }>;
+  context?: {
+    hasActiveIntegral: boolean;
+    totalIntegralsInHistory: number;
+    currentCoordinateSystem?: string;
+    recentTopics?: string[];
+  };
 }
 
 export interface AIResponse {
@@ -40,7 +59,7 @@ export interface ErrorCheckResult {
 class AIClient {
   private baseURL = (import.meta as any).env?.PROD 
     ? '/.netlify/functions'  // Producción (Netlify)
-    : 'http://localhost:5000/api/ai';  // Desarrollo local
+    : 'http://localhost:5001/api/ai';  // Desarrollo local
 
   /**
    * Explica una integral específica basada en una pregunta del usuario
@@ -252,6 +271,8 @@ class AIClient {
       spherical: 'Esféricas'
     };
 
+    if (!integral) return 'No hay integral en contexto';
+    
     return `∫∫∫ ${integral.functionInput} dV
 Sistema: ${systemNames[integral.coordinateSystem as keyof typeof systemNames] || integral.coordinateSystem}
 Límites: x∈[${integral.limits.x.join(',')}], y∈[${integral.limits.y.join(',')}], z∈[${integral.limits.z.join(',')}]
@@ -272,6 +293,45 @@ export const AIUtils = {
       role: msg.type,
       content: msg.content
     }));
+  },
+
+  /**
+   * Clasifica el tipo de pregunta del usuario
+   */
+  classifyQuestion(question: string): 'general' | 'specific' | 'conceptual' | 'computational' | 'visual' | 'comparison' {
+    const lowerQ = question.toLowerCase();
+    
+    // Preguntas sobre visualización
+    if (lowerQ.includes('graficar') || lowerQ.includes('visualizar') || lowerQ.includes('gráfica') || 
+        lowerQ.includes('3d') || lowerQ.includes('región')) {
+      return 'visual';
+    }
+    
+    // Preguntas de comparación
+    if (lowerQ.includes('comparar') || lowerQ.includes('diferencia') || lowerQ.includes('mejor') ||
+        lowerQ.includes('vs') || lowerQ.includes('versus')) {
+      return 'comparison';
+    }
+    
+    // Preguntas computacionales
+    if (lowerQ.includes('calcular') || lowerQ.includes('resolver') || lowerQ.includes('resultado') ||
+        lowerQ.includes('pasos') || lowerQ.includes('método') || lowerQ.includes('solver')) {
+      return 'computational';
+    }
+    
+    // Preguntas conceptuales
+    if (lowerQ.includes('qué es') || lowerQ.includes('explica') || lowerQ.includes('concepto') ||
+        lowerQ.includes('jacobiano') || lowerQ.includes('coordenadas') || lowerQ.includes('teoría')) {
+      return 'conceptual';
+    }
+    
+    // Preguntas específicas sobre la integral actual
+    if (lowerQ.includes('esta integral') || lowerQ.includes('mi integral') || lowerQ.includes('este resultado') ||
+        lowerQ.includes('por qué') || lowerQ.includes('cómo')) {
+      return 'specific';
+    }
+    
+    return 'general';
   },
 
   /**
@@ -327,6 +387,68 @@ export const AIUtils = {
     formatted = formatted.replace(/├─/g, '  •').replace(/└─/g, '  •');
     
     return formatted;
+  },
+
+  /**
+   * Genera preguntas sugeridas basadas en el contexto actual
+   */
+  generateSuggestedQuestions(integral?: AIExplanationRequest['integral'], hasHistory: boolean = false): string[] {
+    const generalQuestions = [
+      "¿Qué es una integral triple?",
+      "¿Cuándo usar coordenadas cilíndricas?",
+      "¿Cómo funciona el jacobiano?",
+      "¿Qué diferencia hay entre los sistemas de coordenadas?",
+      "¿Cómo interpretar geométricamente una integral triple?"
+    ];
+
+    if (!integral) {
+      if (hasHistory) {
+        return [
+          ...generalQuestions.slice(0, 3),
+          "Explica alguna integral de mi historial",
+          "¿Qué método de resolución es mejor?"
+        ];
+      }
+      return generalQuestions;
+    }
+
+    const specificQuestions = [
+      `¿Por qué se usa el sistema ${integral.coordinateSystem} para esta integral?`,
+      "¿Cómo se calcularon estos límites de integración?",
+      "Explica paso a paso cómo se resolvió",
+      "¿Qué representa geométricamente esta integral?",
+      "¿Se podría resolver en otro sistema de coordenadas?"
+    ];
+
+    // Preguntas específicas según el sistema de coordenadas
+    if (integral.coordinateSystem === 'cylindrical') {
+      specificQuestions.push("¿Por qué el jacobiano es r en coordenadas cilíndricas?");
+    } else if (integral.coordinateSystem === 'spherical') {
+      specificQuestions.push("¿Por qué el jacobiano es ρ²sin(φ) en coordenadas esféricas?");
+    }
+
+    // Preguntas sobre el solver usado
+    if (integral.calculationData?.usedPythonSolver) {
+      specificQuestions.push("¿Qué ventajas tiene usar el solver Python?");
+    }
+
+    return specificQuestions;
+  },
+
+  /**
+   * Crea contexto enriquecido para la IA
+   */
+  buildEnhancedContext(
+    integral?: AIExplanationRequest['integral'],
+    history?: any[],
+    recentTopics?: string[]
+  ): AIExplanationRequest['context'] {
+    return {
+      hasActiveIntegral: !!integral,
+      totalIntegralsInHistory: history?.length || 0,
+      currentCoordinateSystem: integral?.coordinateSystem,
+      recentTopics: recentTopics || []
+    };
   }
 };
 

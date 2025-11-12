@@ -410,6 +410,8 @@ const App = () => {
             integralContext={currentIntegralContext}
             history={history}
             onClearContext={() => setCurrentIntegralContext(null)}
+            onVisualize={handleVisualization}
+            onCompare={handleComparison}
           />
         );
       case 'comparison':

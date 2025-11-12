@@ -40,7 +40,7 @@ const AITutorScreen: React.FC<AITutorScreenProps> = ({
     {
       id: '1',
       type: 'ai',
-      content: '**¡Hola! Soy tu Tutor IA de Integrales Triples**\n\nEstoy especializado ÚNICAMENTE en integrales triples. Puedo ayudarte con:\n\n• **Explicar conceptos**: Jacobiano, sistemas de coordenadas, límites\n• **Analizar tu integral**: Si tienes una integral resuelta del historial, puedo explicarla\n• **Comparar métodos**: ¿Cartesianas vs Cilíndricas vs Esféricas?\n• **Sugerir estrategias**: El mejor enfoque para cada problema\n• **Visualizar en 3D**: Graficar la región de integración\n\n**¿En qué necesitas ayuda?**\n\n*Consejo: Resuelve una integral primero o selecciona una del historial para obtener explicaciones específicas.*',
+      content: '**¡Hola! Soy tu Tutor IA Especializado en Integrales Triples**\n\n🎯 **Puedo responder CUALQUIER pregunta sobre integrales triples:**\n\n**📚 Conceptos Teóricos:**\n• ¿Qué es una integral triple?\n• Jacobiano y transformaciones\n• Sistemas de coordenadas\n• Interpretación geométrica\n\n**🔧 Aspectos Computacionales:**\n• Métodos de resolución\n• Python Solver vs JavaScript\n• Pasos de cálculo detallados\n• Optimización de métodos\n\n**🎨 Visualización:**\n• Regiones de integración\n• Gráficas 3D con Plotly\n• Interpretación visual\n\n**🔍 Análisis Específico:**\n• Explicar integrales del historial\n• Comparar sistemas de coordenadas\n• Sugerir mejores enfoques\n\n**¿Qué te gustaría saber sobre integrales triples?**\n\n*Puedo responder desde conceptos básicos hasta análisis avanzados de tus cálculos.*',
       timestamp: new Date(),
       source: 'system'
     }
@@ -50,6 +50,8 @@ const AITutorScreen: React.FC<AITutorScreenProps> = ({
   const [isTyping, setIsTyping] = useState(false);
   const [chatMode, setChatMode] = useState<'explain' | 'concept'>('concept');
   const [currentIntegral, setCurrentIntegral] = useState<HistoryItem | null>(null);
+  const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
+  const [recentTopics, setRecentTopics] = useState<string[]>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -61,6 +63,29 @@ const AITutorScreen: React.FC<AITutorScreenProps> = ({
     scrollToBottom();
   }, [messages]);
 
+  // Generar preguntas sugeridas basadas en el contexto
+  useEffect(() => {
+    const integralForSuggestions = currentIntegral ? {
+      id: currentIntegral.id,
+      functionInput: currentIntegral.function,
+      limits: {
+        x: currentIntegral.limits.x.map(String),
+        y: currentIntegral.limits.y.map(String),
+        z: currentIntegral.limits.z.map(String)
+      },
+      coordinateSystem: currentIntegral.coordinateSystem,
+      result: currentIntegral.result,
+      metadata: currentIntegral.metadata,
+      calculationData: {
+        usedPythonSolver: currentIntegral.metadata?.method?.includes('Python') || false,
+        pythonAvailable: true
+      }
+    } : undefined;
+
+    const questions = AIUtils.generateSuggestedQuestions(integralForSuggestions, history.length > 0);
+    setSuggestedQuestions(questions);
+  }, [currentIntegral, history]);
+
   // Cargar integral del contexto si está disponible
   useEffect(() => {
     if (integralContext && history.length > 0) {
@@ -69,7 +94,10 @@ const AITutorScreen: React.FC<AITutorScreenProps> = ({
         setCurrentIntegral(integral);
         setChatMode('explain');
         
-        // Agregar mensaje de contexto
+        // Agregar mensaje de contexto enriquecido
+        const solverInfo = integral.metadata?.method?.includes('Python') ? '🐍 Python (SymPy/SciPy)' : '⚡ JavaScript';
+        const executionTime = 0; // Placeholder para tiempo de ejecución
+        
         const contextMessage: ChatMessage = {
           id: `context_${Date.now()}`,
           type: 'ai',
@@ -82,8 +110,12 @@ const AITutorScreen: React.FC<AITutorScreenProps> = ({
               z: integral.limits.z.map(String)
             },
             coordinateSystem: integral.coordinateSystem,
-            result: integral.result
-          })}\n\n**Ahora puedo responder preguntas específicas sobre esta integral.** ¿Qué te gustaría saber?`,
+            result: integral.result,
+            metadata: {
+              solver: solverInfo,
+              executionTime: executionTime
+            }
+          })}\n\n**🔧 Información Adicional:**\n• **Solver usado:** ${solverInfo}\n• **Sistema de coordenadas:** ${integral.coordinateSystem}\n• **Confianza:** ${((integral.metadata?.confidence || 0.85) * 100).toFixed(1)}%\n\n**🎯 Ahora puedo responder CUALQUIER pregunta sobre esta integral:**\n• ¿Por qué se eligió este sistema de coordenadas?\n• ¿Cómo se calculó paso a paso?\n• ¿Qué representa geométricamente?\n• ¿Se podría resolver de otra manera?\n• ¿Qué ventajas tiene el solver usado?\n\n**¿Qué te gustaría saber?**`,
           timestamp: new Date(),
           source: 'context'
         };
@@ -136,6 +168,13 @@ const AITutorScreen: React.FC<AITutorScreenProps> = ({
           messages.slice(-5).map(m => ({ type: m.type, content: m.content }))
         );
 
+        // Clasificar tipo de pregunta
+        const questionType = AIUtils.classifyQuestion(inputMessage);
+        
+        // Agregar tema a la lista de temas recientes
+        const topic = inputMessage.split(' ').slice(0, 3).join(' ');
+        setRecentTopics(prev => [topic, ...prev.slice(0, 4)]);
+
         const integralData: AIExplanationRequest['integral'] = {
           id: currentIntegral.id,
           functionInput: currentIntegral.function,
@@ -148,10 +187,19 @@ const AITutorScreen: React.FC<AITutorScreenProps> = ({
           result: currentIntegral.result
         };
 
+        // Crear contexto enriquecido
+        const enhancedContext = AIUtils.buildEnhancedContext(
+          integralData,
+          history,
+          recentTopics
+        );
+
         aiResponse = await aiClient.explainIntegral({
           integral: integralData,
           question: inputMessage,
-          conversationHistory
+          questionType: questionType,
+          conversationHistory,
+          context: enhancedContext
         });
         source = 'explain';
       } else {
@@ -503,8 +551,8 @@ const AITutorScreen: React.FC<AITutorScreenProps> = ({
               gap: '8px'
             }}>
               <div><strong>Sistema:</strong> {currentIntegral.coordinateSystem}</div>
-              <div><strong>Resultado:</strong> {currentIntegral.result.decimal.toFixed(4)}</div>
-              <div><strong>Dificultad:</strong> {'⭐'.repeat(currentIntegral.metadata.difficulty)}</div>
+              <div><strong>Resultado:</strong> {currentIntegral.result?.decimal?.toFixed(4) || 'N/A'}</div>
+              <div><strong>Dificultad:</strong> {'⭐'.repeat(currentIntegral.metadata?.difficulty || 1)}</div>
             </div>
           </div>
         )}
@@ -544,7 +592,7 @@ const AITutorScreen: React.FC<AITutorScreenProps> = ({
                     const contextMessage: ChatMessage = {
                       id: `context_${Date.now()}`,
                       type: 'ai',
-                      content: `**📊 Integral Cargada:**\n\n∫∫∫ ${item.function} dV\n\nSistema: ${item.coordinateSystem}\nResultado: ${item.result.decimal.toFixed(4)}\n\n**Ahora puedo responder preguntas específicas sobre esta integral.**`,
+                      content: `**📊 Integral Cargada:**\n\n∫∫∫ ${item.function} dV\n\nSistema: ${item.coordinateSystem}\nResultado: ${item.result?.decimal?.toFixed(4) || 'N/A'}\n\n**Ahora puedo responder preguntas específicas sobre esta integral.**`,
                       timestamp: new Date(),
                       source: 'context'
                     };
@@ -577,7 +625,7 @@ const AITutorScreen: React.FC<AITutorScreenProps> = ({
                     f(x,y,z) = {item.function}
                   </div>
                   <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>
-                    {item.coordinateSystem} • {item.result.decimal.toFixed(4)}
+                    {item.coordinateSystem} • {item.result?.decimal?.toFixed(4) || 'N/A'}
                   </div>
                 </button>
               ))}
@@ -830,33 +878,62 @@ const AITutorScreen: React.FC<AITutorScreenProps> = ({
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Sugerencias Rápidas */}
-        <div style={{
-          display: 'flex',
-          gap: '8px',
-          marginBottom: '16px',
-          flexWrap: 'wrap',
-          justifyContent: 'center'
-        }}>
-          {getQuickSuggestions().slice(0, 4).map((suggestion, index) => (
-            <button
-              key={index}
-              onClick={() => setInputMessage(suggestion)}
-              style={{
-                background: isDark ? colors.dark : '#F0F0F0',
-                border: '2px solid #666',
-                borderRadius: '8px',
-                padding: '4px 8px',
-                color: isDark ? colors.white : '#000000',
-                fontSize: '0.8rem',
-                cursor: 'pointer',
-                opacity: 0.8
-              }}
-            >
-              {suggestion}
-            </button>
-          ))}
-        </div>
+        {/* Preguntas Sugeridas Contextuales */}
+        {suggestedQuestions.length > 0 && (
+          <div style={{
+            marginBottom: '16px',
+            padding: '12px',
+            background: isDark ? '#374151' : '#F3F4F6',
+            border: '2px solid #000000',
+            borderRadius: '12px'
+          }}>
+            <h4 style={{
+              color: colors.text,
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              marginBottom: '8px',
+              textAlign: 'center'
+            }}>
+              💡 Preguntas Sugeridas
+            </h4>
+            <div style={{
+              display: 'flex',
+              gap: '6px',
+              flexWrap: 'wrap',
+              justifyContent: 'center'
+            }}>
+              {suggestedQuestions.slice(0, 4).map((question, index) => (
+                <button
+                  key={index}
+                  onClick={() => setInputMessage(question)}
+                  style={{
+                    background: currentIntegral ? '#10B981' : '#3B82F6',
+                    color: '#FFFFFF',
+                    border: '2px solid #000000',
+                    borderRadius: '8px',
+                    padding: '6px 10px',
+                    fontSize: '0.75rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    maxWidth: '200px',
+                    textAlign: 'center',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  {question.length > 40 ? question.substring(0, 37) + '...' : question}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Input Area */}
         <div style={{

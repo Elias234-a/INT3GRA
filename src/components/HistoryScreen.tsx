@@ -126,7 +126,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({
     cylindrical: history.filter(h => h.coordinateSystem === 'cylindrical').length,
     spherical: history.filter(h => h.coordinateSystem === 'spherical').length,
     favorites: getFavorites().length,
-    averageTime: history.length > 0 ? Math.round(history.reduce((acc, h) => acc + h.calculationTime, 0) / history.length) : 0
+    averageTime: history.length > 0 ? Math.round(history.reduce((acc, h) => acc + (h.calculationTime || 0), 0) / history.length) : 0
   };
 
   const filteredHistory = getFilteredHistory();
@@ -503,18 +503,18 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({
                       fontWeight: '700',
                       color: '#4C763B'
                     }}>
-                      {item.result.decimal.toFixed(4)}
+                      {item.result?.decimal?.toFixed(4) || 'N/A'}
                     </div>
                     <div style={{
                       fontSize: '0.8rem',
                       color: isDark ? colors.white : '#666'
                     }}>
-                      {item.calculationTime}ms
+                      {item.calculationTime || 0}ms
                     </div>
                   </div>
                   
                   <div style={{ display: 'flex', gap: '2px' }}>
-                    {getDifficultyStars(item.metadata.difficulty)}
+                    {getDifficultyStars(item.metadata?.difficulty || 1)}
                   </div>
                 </div>
 

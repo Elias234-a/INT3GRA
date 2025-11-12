@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Frontend Python Solver Calls</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; font-size: 16px; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Frontend Python Solver Calls</h1>
+    
+    <button onclick="testHealthCheck()">🔍 Test Health Check</button>
+    <button onclick="testSolveIntegral()">🧮 Test Solve Integral</button>
+    <button onclick="testSolveWithFallback()">🔄 Test Solve With Fallback</button>
+    <button onclick="clearResults()">🗑️ Limpiar</button>
+    
+    <div id="results"></div>
+
+    <script>
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // Simular exactamente lo que hace PythonSolverService
+        class TestPythonSolverService {
+            constructor() {
+                this.baseUrl = 'http://localhost:5000/api/python-solver';
+                this.timeout = 60000;
+            }
+
+            async checkHealth() {
+                try {
+                    addResult('🔍 Verificando Python Solver...', 'info');
+                    
+                    const response = await fetch(`${this.baseUrl}/health`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        signal: AbortSignal.timeout(10000)
+                    });
+
+                    addResult(`📡 Status: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        addResult(`✅ Health Check exitoso: <pre>${JSON.stringify(result, null, 2)}</pre>`, 'success');
+                        return { available: true, details: result };
+                    } else {
+                        const errorText = await response.text();
+                        addResult(`❌ Health Check falló: ${errorText}`, 'error');
+                        return { available: false, error: `Status ${response.status}: ${errorText}` };
+                    }
+
+                } catch (error) {
+                    addResult(`💥 Error en Health Check: ${error.message}`, 'error');
+                    return { available: false, error: error.message };
+                }
+            }
+
+            async solveTripleIntegral(functionStr, limits, coordinateSystem) {
+                try {
+                    addResult(`🧮 Resolviendo integral: ${functionStr}`, 'info');
+                    addResult(`📊 Límites: <pre>${JSON.stringify(limits, null, 2)}</pre>`, 'info');
+                    
+                    const requestBody = {
+                        function: functionStr,
+                        limits: limits,
+                        coordinate_system: coordinateSystem
+                    };
+
+                    addResult(`📤 Enviando: <pre>${JSON.stringify(requestBody, null, 2)}</pre>`, 'info');
+
+                    const response = await fetch(`${this.baseUrl}/solve`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(requestBody),
+                        signal: AbortSignal.timeout(this.timeout)
+                    });
+
+                    addResult(`📡 Respuesta: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        addResult(`✅ Integral resuelta: <pre>${JSON.stringify(result, null, 2)}</pre>`, 'success');
+                        return result;
+                    } else {
+                        const errorText = await response.text();
+                        addResult(`❌ Error resolviendo integral: ${errorText}`, 'error');
+                        return { success: false, error: errorText };
+                    }
+
+                } catch (error) {
+                    addResult(`💥 Error en solve: ${error.message}`, 'error');
+                    return { success: false, error: error.message };
+                }
+            }
+
+            async solveWithFallback(functionStr, limits, coordinateSystem, fallbackSolver) {
+                addResult('🔄 Iniciando solveWithFallback...', 'info');
+                
+                // Intentar con Python primero
+                const pythonResult = await this.solveTripleIntegral(functionStr, limits, coordinateSystem);
+                
+                if (pythonResult.success) {
+                    addResult('✅ Python Solver exitoso, no necesita fallback', 'success');
+                    return this.convertToIntegralStep(pythonResult);
+                }
+
+                addResult('⚠️ Python Solver falló, intentando fallback...', 'error');
+
+                // Si Python falla y hay fallback, usarlo
+                if (fallbackSolver && pythonResult.fallback) {
+                    addResult('🔄 Usando solver JavaScript como fallback...', 'info');
+                    try {
+                        const fallbackResult = await fallbackSolver(functionStr, limits, coordinateSystem);
+                        addResult('✅ Fallback exitoso', 'success');
+                        return {
+                            ...fallbackResult,
+                            method: (fallbackResult.method || 'JavaScript') + ' (Fallback)',
+                            python_error: pythonResult.error
+                        };
+                    } catch (fallbackError) {
+                        addResult(`❌ Fallback también falló: ${fallbackError.message}`, 'error');
+                    }
+                }
+
+                // Si todo falla, retornar error
+                const finalError = pythonResult.error || 'Todos los métodos de resolución fallaron';
+                addResult(`💥 Todos los métodos fallaron: ${finalError}`, 'error');
+                return {
+                    success: false,
+                    error: finalError,
+                    python_error: pythonResult.error
+                };
+            }
+
+            convertToIntegralStep(pythonResult) {
+                if (!pythonResult.success) {
+                    return null;
+                }
+
+                return {
+                    result: pythonResult.result,
+                    exact: pythonResult.exact_result,
+                    steps: pythonResult.steps || [],
+                    method: pythonResult.method || 'Python',
+                    execution_time: pythonResult.execution_time || 0,
+                    metadata: pythonResult.metadata || {}
+                };
+            }
+        }
+
+        const testService = new TestPythonSolverService();
+
+        async function testHealthCheck() {
+            addResult('=== TEST HEALTH CHECK ===', 'info');
+            await testService.checkHealth();
+        }
+
+        async function testSolveIntegral() {
+            addResult('=== TEST SOLVE INTEGRAL ===', 'info');
+            await testService.solveTripleIntegral(
+                'x*y*z',
+                { x: [0, 1], y: [0, 1], z: [0, 1] },
+                'cartesian'
+            );
+        }
+
+        async function testSolveWithFallback() {
+            addResult('=== TEST SOLVE WITH FALLBACK ===', 'info');
+            
+            // Simular fallback solver
+            const mockFallbackSolver = async (func, limits, coord) => {
+                addResult('🔄 Ejecutando mock fallback solver...', 'info');
+                return {
+                    result: 0.125,
+                    method: 'JavaScript Mock',
+                    steps: ['Mock step 1', 'Mock step 2']
+                };
+            };
+
+            await testService.solveWithFallback(
+                'x*y*z',
+                { x: [0, 1], y: [0, 1], z: [0, 1] },
+                'cartesian',
+                mockFallbackSolver
+            );
+        }
+
+        // Test automático al cargar
+        window.onload = function() {
+            addResult('🚀 Test de Frontend Python Solver cargado. Haz clic en los botones para probar.', 'info');
+        };
+    </script>
+</body>
+</html>

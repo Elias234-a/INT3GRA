@@ -58,6 +58,8 @@
       },
       "devDependencies": {
             "@types/node": "^20.10.0",
+            "@types/plotly.js": "^3.0.8",
+            "@types/plotly.js-dist-min": "^2.3.4",
             "@types/react": "^19.2.2",
             "@types/react-dom": "^19.2.2",
             "@types/react-katex": "^3.0.4",

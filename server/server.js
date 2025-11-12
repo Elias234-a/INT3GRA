@@ -13,6 +13,7 @@ app.use(express.json());
 // Routes
 app.use('/api/solver', require('./routes/solver'));
 app.use('/api/advanced-solver', require('./routes/advanced-solver'));
+app.use('/api/python-solver', require('./routes/python-solver'));
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/cases', require('./routes/cases'));
 

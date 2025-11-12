@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Moon, Sun, Box, RotateCcw, Download, Play, Pause, Grid3X3, Layers } from 'lucide-react';
 import Plotly from 'plotly.js-dist-min';
+import { pythonSolverService } from '../services/PythonSolverService';
 
 interface VisualizationScreenProps {
   colors: any;
@@ -27,24 +28,76 @@ const ImprovedVisualizationScreen: React.FC<VisualizationScreenProps> = ({
   const [resolution, setResolution] = useState(30);
   const [error, setError] = useState<string | null>(null);
   const animationRef = useRef<number | null>(null);
+  const [usePythonVisualization, setUsePythonVisualization] = useState(true);
+  const [pythonVisualizationAvailable, setPythonVisualizationAvailable] = useState(false);
+  const [isGeneratingPlot, setIsGeneratingPlot] = useState(false);
+  const [plotType, setPlotType] = useState<'surface' | 'scatter' | 'wireframe' | 'slices' | 'all'>('all');
+
+  // Verificar disponibilidad del Python Solver para visualización
+  useEffect(() => {
+    const checkPythonVisualization = async () => {
+      try {
+        const health = await pythonSolverService.checkHealth();
+        setPythonVisualizationAvailable(health.available);
+        console.log('📊 Python Visualization disponible:', health.available);
+      } catch (error) {
+        setPythonVisualizationAvailable(false);
+        console.log('❌ Python Visualization no disponible');
+      }
+    };
+    
+    checkPythonVisualization();
+  }, []);
 
   useEffect(() => {
     console.log('🎨 ImprovedVisualizationScreen montado con datos:', integralData);
+    
+    // Verificar que Plotly esté disponible
+    if (typeof Plotly === 'undefined' || !Plotly.newPlot) {
+      console.error('❌ Plotly no está disponible');
+      setError('Error: Plotly no se ha cargado correctamente');
+      return;
+    }
+    
     try {
-      if (integralData) {
+      if (integralData && typeof integralData === 'object') {
         console.log('📊 Datos de integral recibidos:', integralData);
         const func = integralData.function || 'x*y*z';
         setFunctionInput(func);
         setCoordinateSystem(integralData.coordinateSystem || 'cartesian');
         
-        plotTripleIntegral(func, integralData.limits, integralData.coordinateSystem || 'cartesian');
+        // Configurar el solver según lo que se usó en el cálculo
+        if (integralData.solverInfo) {
+          setUsePythonVisualization(integralData.solverInfo.usedPythonSolver);
+          setPythonVisualizationAvailable(integralData.solverInfo.pythonAvailable);
+          console.log('🔧 Configurando visualización según solver usado:', {
+            usedPython: integralData.solverInfo.usedPythonSolver,
+            pythonAvailable: integralData.solverInfo.pythonAvailable
+          });
+        }
+        
+        // Validar que los límites existan y tengan la estructura correcta
+        const limits = integralData.limits || { x: [-1, 1], y: [-1, 1], z: [-1, 1] };
+        const validLimits = {
+          x: Array.isArray(limits.x) && limits.x.length >= 2 ? limits.x : [-1, 1],
+          y: Array.isArray(limits.y) && limits.y.length >= 2 ? limits.y : [-1, 1],
+          z: Array.isArray(limits.z) && limits.z.length >= 2 ? limits.z : [-1, 1]
+        };
+        
+        // Pequeño delay para asegurar que el DOM esté listo
+        setTimeout(async () => {
+          await plotTripleIntegralWithPlotly(func, validLimits, integralData.coordinateSystem || 'cartesian');
+        }, 100);
       } else {
         console.log('📊 Sin datos de integral, usando valores por defecto');
         // Gráfica por defecto
-        plotTripleIntegral('x*y*z', { x: [-1, 1], y: [-1, 1], z: [-1, 1] }, 'cartesian');
+        setTimeout(async () => {
+          await plotTripleIntegralWithPlotly('x*y*z', { x: [-1, 1], y: [-1, 1], z: [-1, 1] }, 'cartesian');
+        }, 100);
       }
     } catch (error) {
       console.error('❌ Error en useEffect de ImprovedVisualizationScreen:', error);
+      setError(`Error inicializando visualización: ${error}`);
     }
   }, [integralData, isDark]);
 
@@ -92,8 +145,278 @@ const ImprovedVisualizationScreen: React.FC<VisualizationScreenProps> = ({
     }
   };
 
-  // Función principal para graficar integrales triples
-  const plotTripleIntegral = (func: string, limits: any, system: string) => {
+  // Función avanzada que usa Plotly Python para generar gráficas completas
+  const plotTripleIntegralWithPlotly = async (func: string, limits: any, system: string) => {
+    console.log('🎨 Iniciando plotTripleIntegralWithPlotly:', { func, limits, system });
+    
+    if (!plotRef.current) {
+      console.error('❌ plotRef.current es null');
+      return;
+    }
+
+    setIsGeneratingPlot(true);
+    setError(null);
+
+    try {
+      // Intentar usar Plotly Python si está disponible
+      if (usePythonVisualization && pythonVisualizationAvailable) {
+        console.log('🐍 Usando Plotly Python para visualización avanzada...');
+        
+        try {
+          const plotlyResult = await pythonSolverService.generatePlotly3D(
+            func,
+            limits,
+            system as 'cartesian' | 'cylindrical' | 'spherical',
+            resolution,
+            plotType
+          );
+
+          if (plotlyResult.success) {
+            console.log('✅ Datos Plotly Python recibidos:', plotlyResult.plotlyData.metadata);
+            
+            // Usar directamente los datos de Plotly Python
+            const plotlyData = plotlyResult.plotlyData;
+            
+            console.log('🎯 Creando gráfica con datos Plotly Python...');
+            await Plotly.newPlot(
+              plotRef.current, 
+              plotlyData.data, 
+              plotlyData.layout, 
+              plotlyData.config
+            );
+            
+            console.log('✅ Gráfica Plotly Python creada exitosamente');
+            setError(null);
+            return;
+          } else {
+            console.log('❌ Plotly Python falló, usando fallback:', plotlyResult.error);
+          }
+        } catch (error) {
+          console.error('❌ Error con Plotly Python:', error);
+        }
+      }
+
+      // Fallback a la función mejorada anterior
+      console.log('⚡ Usando visualización JavaScript mejorada...');
+      await plotTripleIntegralEnhanced(func, limits, system);
+
+    } catch (error) {
+      console.error('❌ Error al graficar:', error);
+      setError(`Error al crear la gráfica: ${error}`);
+    } finally {
+      setIsGeneratingPlot(false);
+    }
+  };
+
+  // Función mejorada para graficar integrales triples con Python Solver
+  const plotTripleIntegralEnhanced = async (func: string, limits: any, system: string) => {
+    console.log('🎨 Iniciando plotTripleIntegralEnhanced:', { func, limits, system });
+    
+    if (!plotRef.current) {
+      console.error('❌ plotRef.current es null');
+      return;
+    }
+
+    setIsGeneratingPlot(true);
+    setError(null);
+
+    try {
+      let traces: any[] = [];
+
+      // Intentar usar Python Solver para generar datos si está disponible
+      if (usePythonVisualization && pythonVisualizationAvailable) {
+        console.log('🐍 Usando Python Solver para visualización...');
+        
+        try {
+          const pythonPlotData = await pythonSolverService.generatePlotData(
+            func,
+            limits,
+            system as 'cartesian' | 'cylindrical' | 'spherical',
+            resolution
+          );
+
+          if (pythonPlotData.success) {
+            console.log('✅ Datos de Python recibidos:', pythonPlotData.plotData.statistics);
+            traces = await createTracesFromPythonData(pythonPlotData.plotData, system);
+          } else {
+            console.log('❌ Python visualization falló, usando fallback:', pythonPlotData.error);
+            traces = await createTracesJavaScript(func, limits, system);
+          }
+        } catch (error) {
+          console.error('❌ Error con Python visualization:', error);
+          traces = await createTracesJavaScript(func, limits, system);
+        }
+      } else {
+        console.log('⚡ Usando visualización JavaScript...');
+        traces = await createTracesJavaScript(func, limits, system);
+      }
+
+      // Configurar layout
+      const layout = {
+        title: {
+          text: `Integral Triple: ∫∫∫ ${func} dV (${system})`,
+          font: { size: 16, color: colors.text }
+        },
+        scene: {
+          xaxis: { 
+            title: { text: system === 'spherical' ? 'X (ρsinφcosθ)' : system === 'cylindrical' ? 'X (rcosθ)' : 'X' },
+            range: [limits.x[0] - 0.5, limits.x[1] + 0.5],
+            color: colors.text,
+            gridcolor: isDark ? '#374151' : '#E5E7EB'
+          },
+          yaxis: { 
+            title: { text: system === 'spherical' ? 'Y (ρsinφsinθ)' : system === 'cylindrical' ? 'Y (rsinθ)' : 'Y' },
+            range: [limits.y[0] - 0.5, limits.y[1] + 0.5],
+            color: colors.text,
+            gridcolor: isDark ? '#374151' : '#E5E7EB'
+          },
+          zaxis: { 
+            title: { text: system === 'spherical' ? 'Z (ρcosφ)' : 'Z' },
+            range: [limits.z[0] - 0.5, limits.z[1] + 0.5],
+            color: colors.text,
+            gridcolor: isDark ? '#374151' : '#E5E7EB'
+          },
+          bgcolor: isDark ? '#1F2937' : '#FFFFFF',
+          camera: {
+            eye: { x: 1.5, y: 1.5, z: 1.5 }
+          }
+        },
+        paper_bgcolor: isDark ? colors.dark : '#FFFFFF',
+        plot_bgcolor: isDark ? colors.dark : '#FFFFFF',
+        font: { color: colors.text },
+        margin: { l: 0, r: 0, t: 50, b: 0 }
+      };
+
+      const config = {
+        displayModeBar: true,
+        modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d', 'autoScale2d'],
+        displaylogo: false,
+        responsive: true
+      } as any;
+
+      console.log('🎯 Creando gráfica con Plotly.newPlot...');
+      console.log('📊 Traces:', traces.length, 'elementos');
+      
+      await Plotly.newPlot(plotRef.current, traces, layout, config);
+      console.log('✅ Gráfica creada exitosamente');
+      setError(null);
+
+    } catch (error) {
+      console.error('❌ Error al graficar:', error);
+      setError(`Error al crear la gráfica: ${error}`);
+    } finally {
+      setIsGeneratingPlot(false);
+    }
+  };
+
+  // Crear trazos desde datos de Python
+  const createTracesFromPythonData = async (plotData: any, system: string): Promise<any[]> => {
+    const traces: any[] = [];
+
+    // 1. Región de integración (wireframe)
+    if (showRegion && plotData.region_wireframe) {
+      const regionTrace = {
+        type: 'scatter3d',
+        mode: 'lines',
+        x: [] as (number | null)[],
+        y: [] as (number | null)[],
+        z: [] as (number | null)[],
+        line: {
+          color: '#10B981',
+          width: 4
+        },
+        name: 'Región de Integración',
+        showlegend: true
+      };
+
+      // Agregar líneas del wireframe
+      plotData.region_wireframe.lines.forEach((line: any) => {
+        regionTrace.x.push(line.start[0], line.end[0], null);
+        regionTrace.y.push(line.start[1], line.end[1], null);
+        regionTrace.z.push(line.start[2], line.end[2], null);
+      });
+
+      traces.push(regionTrace);
+    }
+
+    // 2. Superficies de la función (planos de corte)
+    if (showFunction && plotData.surface_data) {
+      plotData.surface_data.forEach((slice: any, index: number) => {
+        const surfaceTrace = {
+          type: 'scatter3d',
+          mode: 'markers',
+          x: slice.x,
+          y: slice.y,
+          z: slice.z,
+          marker: {
+            size: 3,
+            color: slice.values,
+            colorscale: 'Viridis',
+            opacity: 0.6,
+            colorbar: index === 0 ? {
+              title: 'f(x,y,z)',
+              titleside: 'right'
+            } : undefined
+          },
+          name: `Plano z=${slice.z_level.toFixed(2)}`,
+          showlegend: false
+        };
+        traces.push(surfaceTrace);
+      });
+    }
+
+    // 3. Puntos de muestra
+    if (plotData.sample_points && plotData.sample_points.length > 0) {
+      const sampleTrace = {
+        type: 'scatter3d',
+        mode: 'markers',
+        x: plotData.sample_points.map((p: any) => p.x),
+        y: plotData.sample_points.map((p: any) => p.y),
+        z: plotData.sample_points.map((p: any) => p.z),
+        marker: {
+          size: 4,
+          color: plotData.sample_points.map((p: any) => p.value),
+          colorscale: 'RdYlBu',
+          opacity: 0.8,
+          line: {
+            color: '#000000',
+            width: 1
+          }
+        },
+        name: 'Puntos de Muestra (Python)',
+        showlegend: true
+      };
+      traces.push(sampleTrace);
+    }
+
+    return traces;
+  };
+
+  // Crear trazos usando JavaScript (fallback)
+  const createTracesJavaScript = async (func: string, limits: any, system: string): Promise<any[]> => {
+    const traces: any[] = [];
+
+    // 1. Crear región de integración (wireframe)
+    if (showRegion) {
+      const regionTrace = createIntegrationRegion(limits, system);
+      traces.push(regionTrace);
+    }
+
+    // 2. Crear superficie de la función (si es visualizable)
+    if (showFunction) {
+      const functionTraces = createFunctionVisualization(func, limits, system);
+      traces.push(...functionTraces);
+    }
+
+    // 3. Crear puntos de muestra para mostrar el comportamiento de la función
+    const samplePoints = createSamplePoints(func, limits, system);
+    traces.push(samplePoints);
+
+    return traces;
+  };
+
+  // Función principal para graficar integrales triples (original como fallback)
+  const plotTripleIntegral = async (func: string, limits: any, system: string) => {
     console.log('🎨 Iniciando plotTripleIntegral:', { func, limits, system });
     
     if (!plotRef.current) {
@@ -130,19 +453,19 @@ const ImprovedVisualizationScreen: React.FC<VisualizationScreenProps> = ({
         },
         scene: {
           xaxis: { 
-            title: system === 'spherical' ? 'X (ρsinφcosθ)' : system === 'cylindrical' ? 'X (rcosθ)' : 'X',
+            title: { text: system === 'spherical' ? 'X (ρsinφcosθ)' : system === 'cylindrical' ? 'X (rcosθ)' : 'X' },
             range: [limits.x[0] - 0.5, limits.x[1] + 0.5],
             color: colors.text,
             gridcolor: isDark ? '#374151' : '#E5E7EB'
           },
           yaxis: { 
-            title: system === 'spherical' ? 'Y (ρsinφsinθ)' : system === 'cylindrical' ? 'Y (rsinθ)' : 'Y',
+            title: { text: system === 'spherical' ? 'Y (ρsinφsinθ)' : system === 'cylindrical' ? 'Y (rsinθ)' : 'Y' },
             range: [limits.y[0] - 0.5, limits.y[1] + 0.5],
             color: colors.text,
             gridcolor: isDark ? '#374151' : '#E5E7EB'
           },
           zaxis: { 
-            title: system === 'spherical' ? 'Z (ρcosφ)' : 'Z',
+            title: { text: system === 'spherical' ? 'Z (ρcosφ)' : 'Z' },
             range: [limits.z[0] - 0.5, limits.z[1] + 0.5],
             color: colors.text,
             gridcolor: isDark ? '#374151' : '#E5E7EB'
@@ -160,12 +483,16 @@ const ImprovedVisualizationScreen: React.FC<VisualizationScreenProps> = ({
 
       const config = {
         displayModeBar: true,
-        modeBarButtonsToRemove: ['pan2d', 'lasso2d'],
+        modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d', 'autoScale2d'],
         displaylogo: false,
         responsive: true
-      };
+      } as any;
 
-      Plotly.newPlot(plotRef.current, traces, layout, config);
+      console.log('🎯 Creando gráfica con Plotly.newPlot...');
+      console.log('📊 Traces:', traces.length, 'elementos');
+      console.log('🎨 Layout configurado');
+      
+      await Plotly.newPlot(plotRef.current, traces, layout, config);
       console.log('✅ Gráfica creada exitosamente');
       setError(null);
 
@@ -343,16 +670,25 @@ const ImprovedVisualizationScreen: React.FC<VisualizationScreenProps> = ({
   const animateRotation = () => {
     if (!plotRef.current || !isAnimating) return;
 
-    const update = {
-      'scene.camera.eye': {
-        x: 2 * Math.cos(Date.now() * 0.001),
-        y: 2 * Math.sin(Date.now() * 0.001),
-        z: 1.5
-      }
-    };
+    try {
+      const update = {
+        scene: {
+          camera: {
+            eye: {
+              x: 2 * Math.cos(Date.now() * 0.001),
+              y: 2 * Math.sin(Date.now() * 0.001),
+              z: 1.5
+            }
+          }
+        }
+      };
 
-    Plotly.relayout(plotRef.current, update);
-    animationRef.current = requestAnimationFrame(animateRotation);
+      Plotly.relayout(plotRef.current, update);
+      animationRef.current = requestAnimationFrame(animateRotation);
+    } catch (error) {
+      console.error('❌ Error en animación:', error);
+      setIsAnimating(false);
+    }
   };
 
   return (
@@ -437,6 +773,26 @@ const ImprovedVisualizationScreen: React.FC<VisualizationScreenProps> = ({
             {isAnimating ? <Pause size={20} /> : <Play size={20} />}
           </button>
 
+          {/* Toggle Python Visualization */}
+          <button
+            onClick={() => setUsePythonVisualization(!usePythonVisualization)}
+            disabled={!pythonVisualizationAvailable}
+            style={{
+              background: usePythonVisualization && pythonVisualizationAvailable ? '#10B981' : '#6B7280',
+              color: '#FFFFFF',
+              border: '2px solid #000000',
+              borderRadius: '8px',
+              padding: '0.5rem',
+              cursor: pythonVisualizationAvailable ? 'pointer' : 'not-allowed',
+              opacity: pythonVisualizationAvailable ? 1 : 0.5,
+              fontSize: '0.75rem',
+              fontWeight: '600'
+            }}
+            title={pythonVisualizationAvailable ? 'Python Visualization' : 'Python no disponible'}
+          >
+            🐍
+          </button>
+
           <button
             onClick={toggleTheme}
             style={{
@@ -452,7 +808,7 @@ const ImprovedVisualizationScreen: React.FC<VisualizationScreenProps> = ({
         </div>
       </div>
 
-      {/* Información de la integral */}
+      {/* Información de la Integral */}
       {integralData && (
         <div style={{
           margin: '1rem',
@@ -472,12 +828,84 @@ const ImprovedVisualizationScreen: React.FC<VisualizationScreenProps> = ({
               y ∈ [{integralData.limits?.y?.[0]}, {integralData.limits?.y?.[1]}], 
               z ∈ [{integralData.limits?.z?.[0]}, {integralData.limits?.z?.[1]}]
             </p>
-            {integralData.result && (
-              <p><strong>Resultado:</strong> {integralData.result.toFixed(6)}</p>
+            {integralData.result !== undefined && integralData.result !== null && (
+              <p><strong>Resultado:</strong> {
+                typeof integralData.result === 'number' && !isNaN(integralData.result)
+                  ? integralData.result.toFixed(6)
+                  : String(integralData.result)
+              }</p>
+            )}
+            
+            {/* Información del Solver */}
+            {integralData.solverInfo && (
+              <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: isDark ? '#1F2937' : '#E5E7EB', borderRadius: '6px' }}>
+                <p><strong>🔧 Solver Usado:</strong> {integralData.solverInfo.usedPythonSolver ? '🐍 Python (SymPy/SciPy)' : '⚡ JavaScript'}</p>
+                {integralData.calculationData && (
+                  <>
+                    <p><strong>⏱️ Tiempo:</strong> {integralData.calculationData.executionTime.toFixed(3)}s</p>
+                    <p><strong>🎯 Confianza:</strong> {(integralData.calculationData.confidence * 100).toFixed(1)}%</p>
+                    <p><strong>📝 Pasos:</strong> {integralData.calculationData.steps.length} pasos de resolución</p>
+                  </>
+                )}
+              </div>
             )}
           </div>
         </div>
       )}
+
+      {/* Estado de Visualización */}
+      <div style={{
+        margin: '1rem',
+        padding: '1rem',
+        background: isDark ? '#374151' : '#F3F4F6',
+        border: '3px solid #000000',
+        borderRadius: '12px'
+      }}>
+        <h3 style={{ color: colors.text, margin: '0 0 0.5rem 0' }}>
+          🎨 Estado de Visualización
+        </h3>
+        <div style={{ color: colors.text, fontSize: '0.9rem' }}>
+          <p><strong>Método:</strong> {usePythonVisualization && pythonVisualizationAvailable ? '🐍 Plotly Python (Avanzado)' : '⚡ JavaScript (Fallback)'}</p>
+          <p><strong>Resolución:</strong> {resolution} puntos por eje</p>
+          <p><strong>Tipo de Gráfica:</strong> {plotType === 'all' ? 'Completa' : plotType}</p>
+          <p><strong>Python Disponible:</strong> {pythonVisualizationAvailable ? '✅ Sí' : '❌ No'}</p>
+          {isGeneratingPlot && (
+            <p style={{ color: '#3B82F6', fontWeight: '600' }}>
+              🔄 Generando visualización...
+            </p>
+          )}
+        </div>
+        
+        {/* Controles de tipo de gráfica */}
+        {usePythonVisualization && pythonVisualizationAvailable && (
+          <div style={{ marginTop: '1rem' }}>
+            <label style={{ color: colors.text, fontWeight: '600', display: 'block', marginBottom: '0.5rem' }}>
+              Tipo de Visualización:
+            </label>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              {(['all', 'surface', 'scatter', 'wireframe', 'slices'] as const).map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setPlotType(type)}
+                  style={{
+                    background: plotType === type ? '#10B981' : '#6B7280',
+                    color: '#FFFFFF',
+                    border: '2px solid #000000',
+                    borderRadius: '6px',
+                    padding: '0.25rem 0.5rem',
+                    fontSize: '0.8rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    textTransform: 'capitalize'
+                  }}
+                >
+                  {type === 'all' ? 'Completa' : type}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Error Message */}
       {error && (
@@ -539,22 +967,24 @@ const ImprovedVisualizationScreen: React.FC<VisualizationScreenProps> = ({
         <span style={{ color: colors.text }}>{resolution}</span>
         
         <button
-          onClick={() => {
+          onClick={async () => {
             if (integralData) {
-              plotTripleIntegral(integralData.function, integralData.limits, integralData.coordinateSystem);
+              await plotTripleIntegralWithPlotly(integralData.function, integralData.limits, integralData.coordinateSystem);
             }
           }}
+          disabled={isGeneratingPlot}
           style={{
-            background: '#10B981',
+            background: isGeneratingPlot ? '#6B7280' : '#10B981',
             color: '#FFFFFF',
             border: '2px solid #000000',
             borderRadius: '8px',
             padding: '0.5rem 1rem',
-            cursor: 'pointer',
-            fontWeight: '600'
+            cursor: isGeneratingPlot ? 'not-allowed' : 'pointer',
+            fontWeight: '600',
+            opacity: isGeneratingPlot ? 0.7 : 1
           }}
         >
-          🔄 Actualizar
+          {isGeneratingPlot ? '🔄 Generando...' : '🔄 Actualizar'}
         </button>
       </div>
     </div>
